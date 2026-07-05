@@ -4,6 +4,7 @@ import { connectDB } from './shared/db';
 import { attachOrgContext } from './shared/middleware/orgContext';
 import { vehicleRouter } from './core/vehicle/vehicle.router';
 import { driverRouter } from './core/driver/driver.router';
+import { authRouter } from './core/auth/auth.router';
 
 const app = express();
 app.use(express.json());
@@ -21,6 +22,7 @@ app.use('/api', attachOrgContext);
 // ── Core routers ─────────────────────────────────────────────────────────────
 app.use('/api/vehicles', vehicleRouter);
 app.use('/api/drivers', driverRouter);
+app.use('/api/auth', authRouter);
 
 const PORT = process.env.PORT ?? 3000;
 
