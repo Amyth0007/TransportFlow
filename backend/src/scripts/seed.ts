@@ -43,7 +43,16 @@ async function seed(): Promise<void> {
     console.log('  email:    admin@transportflow.local');
     console.log('  password: changeme  ← change before any real use');
   } else {
-    console.log(`User already exists: ${user.email} (${user._id})`);
+    // If the stored hash isn't a bcrypt hash (e.g. old SHA-256 placeholder),
+    // re-hash with bcrypt so admin login works.
+    const isBcrypt = user.passwordHash.startsWith('$2');
+    if (!isBcrypt) {
+      user.passwordHash = await bcrypt.hash('changeme', 10);
+      await user.save();
+      console.log(`Updated user password to bcrypt: ${user.email}`);
+    } else {
+      console.log(`User already exists: ${user.email} (${user._id})`);
+    }
   }
 
   await mongoose.disconnect();
