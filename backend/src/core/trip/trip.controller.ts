@@ -7,6 +7,16 @@ function handleServiceError(res: Response, error: any): void {
   res.status(status).json({ error: error.message ?? 'Internal server error' });
 }
 
+/** Public — no auth required. Looks up a trip by its unguessable publicTrackingToken. */
+export async function getTripByToken(req: Request, res: Response): Promise<void> {
+  const trip = await tripService.getTripByToken(req.params.token);
+  if (!trip) {
+    res.status(404).json({ error: 'Trip not found' });
+    return;
+  }
+  res.json({ data: trip });
+}
+
 export async function listTrips(req: Request, res: Response): Promise<void> {
   const trips = await tripService.listTrips(req.org.organizationId);
   res.json({ data: trips });

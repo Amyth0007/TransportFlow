@@ -10,6 +10,7 @@ import { routeRouter } from './core/route/route.router';
 import { tripRouter } from './core/trip/trip.router';
 import { authRouter } from './core/auth/auth.router';
 import { registerTrackingHandlers } from './core/tracking/tracking.handler';
+import { getTripByToken } from './core/trip/trip.controller';
 
 const app = express();
 app.use(express.json());
@@ -18,6 +19,9 @@ app.use(express.json());
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
+
+// ── Public endpoints (no auth, no org context) ───────────────────────────────
+app.get('/api/public/trips/:token', getTripByToken);
 
 // ── Org context middleware (applies to all /api routes) ──────────────────────
 // Phase 0: reads PHASE0_ORG_ID from env.

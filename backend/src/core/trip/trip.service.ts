@@ -24,6 +24,11 @@ export interface CreateTripInput {
   scheduledAt: string | Date;
 }
 
+/** Get a single trip by its publicTrackingToken — no org scope needed (token is unguessable UUID). */
+export async function getTripByToken(token: string): Promise<TripDoc | null> {
+  return Trip.findOne({ publicTrackingToken: token }).lean<TripDoc>();
+}
+
 /** List all trips belonging to the given organization, newest first. */
 export async function listTrips(organizationId: string): Promise<TripDoc[]> {
   return Trip.find({ organizationId }).sort({ createdAt: -1 }).lean<TripDoc[]>();
