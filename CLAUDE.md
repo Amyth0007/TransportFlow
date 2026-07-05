@@ -8,10 +8,9 @@ Before doing ANY task in this repo, read these files in order:
    fields)
 4. `docs/DECISIONS.md` — settled decisions, don't re-litigate these
 5. `docs/CONVENTIONS.md` — coding style rules
-6. `docs/PHASE-0-PLAN.md` — current phase scope (this filename will
-   change as phases progress — check `docs/PROGRESS.md` for which phase
-   file is current if unsure)
-7. `docs/PROGRESS.md` — what previous sessions already built
+6. `docs/CURRENT-PHASE.md` — tells you which phase file to read next
+7. That phase file itself (e.g. `docs/PHASE-0-PLAN.md`) — exact current scope
+8. `docs/PROGRESS.md` — what previous sessions already built
 
 ## Rules
 
