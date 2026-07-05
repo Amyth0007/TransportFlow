@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { Driver, Organization } from '../../shared/models';
+import { Driver, Organization, User } from '../../shared/models';
 
 interface LoginResponse {
   token: string;
@@ -53,6 +53,46 @@ export async function loginDriver(phone: string, password: string): Promise<Logi
       name: driver.name,
       phone: driver.phone,
       licenseNumber: driver.licenseNumber,
+    },
+  };
+}
+
+interface AdminLoginResponse {
+  token: string;
+  user: { _id: string; name: string; email: string; role: string };
+}
+
+/**
+ * Log in an org admin using email and password.
+ * Returns a JWT access token if successful.
+ */
+export async function loginAdmin(email: string, password: string): Promise<AdminLoginResponse> {
+  const user = await User.findOne({ email });
+  if (!user) throw new Error('Invalid email or password');
+
+  const isMatch = await bcrypt.compare(password, user.passwordHash);
+  if (!isMatch) throw new Error('Invalid email or password');
+
+  const org = await Organization.findById(user.organizationId);
+  if (!org) throw new Error('Organization not found');
+
+  const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
+  const payload = {
+    userId: user._id.toString(),
+    organizationId: user.organizationId.toString(),
+    orgType: org.orgType,
+    role: user.role,
+  };
+
+  const token = jwt.sign(payload, jwtSecret, { expiresIn: '7d' });
+
+  return {
+    token,
+    user: {
+      _id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
     },
   };
 }

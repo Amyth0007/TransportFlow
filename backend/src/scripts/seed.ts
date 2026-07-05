@@ -3,21 +3,14 @@
  *
  * Run with: npm run seed
  *
- * The password is stored as a plain bcrypt hash of "changeme" (cost 10).
+ * The password is stored as a bcrypt hash of "changeme" (cost 10).
  * Change this before any real deployment.
  */
 import 'dotenv/config';
-import { createHash } from 'crypto';
+import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import { connectDB } from '../shared/db';
 import { Organization, User } from '../shared/models';
-
-// Simple SHA-256 stand-in for Phase 0 — replace with bcrypt when auth is built.
-// Using a deterministic hash so re-running the seed is idempotent and doesn't
-// require bcrypt at the scaffold stage.
-function hashPassword(plain: string): string {
-  return createHash('sha256').update(plain).digest('hex');
-}
 
 async function seed(): Promise<void> {
   await connectDB();
@@ -43,7 +36,7 @@ async function seed(): Promise<void> {
       organizationId: org._id,
       name: 'Demo Admin',
       email: adminEmail,
-      passwordHash: hashPassword('changeme'),
+    passwordHash: await bcrypt.hash('changeme', 10),
       role: 'org_admin',
     });
     console.log(`Created user: ${user.email} (${user._id})`);

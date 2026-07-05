@@ -22,3 +22,23 @@ export async function loginDriver(req: Request, res: Response): Promise<void> {
     }
   }
 }
+
+export async function loginAdmin(req: Request, res: Response): Promise<void> {
+  const { email, password } = req.body as { email?: string; password?: string };
+
+  if (!email || !password) {
+    res.status(400).json({ error: 'Email and password are required' });
+    return;
+  }
+
+  try {
+    const result = await authService.loginAdmin(email, password);
+    res.json({ data: result });
+  } catch (error: any) {
+    if (error.message === 'Invalid email or password') {
+      res.status(401).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+  }
+}
