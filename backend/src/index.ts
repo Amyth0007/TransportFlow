@@ -11,6 +11,7 @@ import { tripRouter } from './core/trip/trip.router';
 import { authRouter } from './core/auth/auth.router';
 import { registerTrackingHandlers } from './core/tracking/tracking.handler';
 import { getTripByToken } from './core/trip/trip.controller';
+import { setIO } from './shared/io';
 
 const app = express();
 app.use(express.json());
@@ -53,6 +54,8 @@ async function start(): Promise<void> {
   io.on('connection', (socket) => {
     registerTrackingHandlers(io, socket);
   });
+
+  setIO(io);
 
   httpServer.listen(PORT, () => {
     console.log(`TransportFlow backend listening on port ${PORT}`);

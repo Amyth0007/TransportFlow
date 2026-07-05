@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 import { Trip, Route, Vehicle, Driver } from '../../shared/models';
+import { getIO } from '../../shared/io';
 
 export interface TripDoc {
   _id: Types.ObjectId;
@@ -114,6 +115,8 @@ export async function startTrip(
     { new: true }
   ).lean<TripDoc>();
 
+  getIO()?.to(`trip_${tripId}`).emit('trip:status_changed', { tripId, status: 'in_progress' });
+
   return updated!;
 }
 
@@ -145,6 +148,8 @@ export async function endTrip(
     { $set: { status: 'completed', endedAt: new Date() } },
     { new: true }
   ).lean<TripDoc>();
+
+  getIO()?.to(`trip_${tripId}`).emit('trip:status_changed', { tripId, status: 'completed' });
 
   return updated!;
 }
