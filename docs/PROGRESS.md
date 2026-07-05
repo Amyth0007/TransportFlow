@@ -8,6 +8,27 @@
 
 ---
 
+### 2026-07-05 — Amazon Q — Route CRUD
+
+Done:
+- Route service (`route.service.ts`) — `listRoutes`, `getRoute`, `createRoute`, `updateRoute`, `deleteRoute`, all scoped by `organizationId` via `req.org`. Stops are sorted by `order` on create and update.
+- Route controller (`route.controller.ts`) and router (`route.router.ts`) — same thin controller pattern as Vehicle/Driver.
+- Registered at `GET/POST /api/routes` and `GET/PATCH/DELETE /api/routes/:id` in `index.ts`.
+- DELETE is a hard-delete (Route has no `status` field in the schema, unlike Vehicle/Driver).
+- TypeScript compiles with `--strict` and zero errors.
+
+Left / next:
+- Trip CRUD (create, list, get, start, end) + `publicTrackingToken` UUID generation
+- Socket.IO server (`trip:join`, `trip:leave`, `location:update`, `location:broadcast`, `trip:status_changed`)
+- Web app (React + Tailwind)
+- Mobile app (Expo)
+
+Notes / gotchas:
+- `route.service.ts` existed as an untracked stub from the previous session; committed as-is after verifying it matched the pattern.
+- Hard-delete chosen for routes because there is no `status` field in the Route schema — consistent with DATA-MODELS.md.
+
+---
+
 ### 2026-07-05 — Antigravity — Driver CRUD + Password Login & req.org Integration
 
 Done:
