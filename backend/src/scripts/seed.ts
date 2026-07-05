@@ -28,6 +28,25 @@ async function seed(): Promise<void> {
     console.log(`Organization already exists: ${org.name} (${org._id})`);
   }
 
+  // ── Super Admin user ──────────────────────────────────────────────────────
+  // Super Admin is not scoped to any org. Seeded once, never recreated.
+  const superAdminEmail = 'superadmin@transportflow.local';
+  let superAdmin = await User.findOne({ email: superAdminEmail });
+  if (!superAdmin) {
+    superAdmin = await User.create({
+      organizationId: null,
+      name: 'Super Admin',
+      email: superAdminEmail,
+      passwordHash: await bcrypt.hash('superchangeme', 10),
+      role: 'super_admin',
+    });
+    console.log(`Created super admin: ${superAdmin.email} (${superAdmin._id})`);
+    console.log('  email:    superadmin@transportflow.local');
+    console.log('  password: superchangeme  ← change before any real use');
+  } else {
+    console.log(`Super admin already exists: ${superAdmin.email} (${superAdmin._id})`);
+  }
+
   // ── Org Admin user ────────────────────────────────────────────────────────
   const adminEmail = 'admin@transportflow.local';
   let user = await User.findOne({ email: adminEmail });

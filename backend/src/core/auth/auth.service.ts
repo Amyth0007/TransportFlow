@@ -73,14 +73,22 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
   const isMatch = await bcrypt.compare(password, user.passwordHash);
   if (!isMatch) throw new Error('Invalid email or password');
 
-  const org = await Organization.findById(user.organizationId);
-  if (!org) throw new Error('Organization not found');
-
   const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
+
+  // super_admin has no organizationId — use empty string as sentinel
+  // (requireAuth sets req.user.organizationId; super_admin routes use
+  // requireSuperAdmin and never touch req.org)
+  let orgType = 'none';
+  if (user.organizationId) {
+    const org = await Organization.findById(user.organizationId);
+    if (!org) throw new Error('Organization not found');
+    orgType = org.orgType;
+  }
+
   const payload = {
     userId: user._id.toString(),
-    organizationId: user.organizationId.toString(),
-    orgType: org.orgType,
+    organizationId: user.organizationId?.toString() ?? '',
+    orgType,
     role: user.role,
   };
 
