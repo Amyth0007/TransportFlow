@@ -1,0 +1,23 @@
+# Cursor Rules — TransportFlow
+
+Before doing ANY task in this repo, read these files in order:
+
+1. docs/VISION.md — why the system is shaped this way
+2. docs/ARCHITECTURE.md — tech stack, folder layout
+3. docs/DATA-MODELS.md — schemas (single source of truth — don't invent
+   fields)
+4. docs/DECISIONS.md — settled decisions, don't re-litigate these
+5. docs/CONVENTIONS.md — coding style rules
+6. docs/PHASE-0-PLAN.md — current phase scope (check docs/PROGRESS.md if
+   unsure which phase file is current)
+7. docs/PROGRESS.md — what previous sessions already built
+
+Rules:
+- Do not introduce scope, libraries, schema fields, or entities that
+  aren't in the docs above without asking first.
+- If something in the codebase contradicts docs/DATA-MODELS.md or
+  docs/DECISIONS.md, flag it — don't silently pick one and proceed.
+- After finishing a task, append an entry to docs/PROGRESS.md describing
+  what changed, using the template at the top of that file.
+- Keep changes minimal and targeted to the current task. Don't refactor
+  unrelated code.

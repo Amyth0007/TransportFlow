@@ -1,0 +1,94 @@
+# TransportFlow — Architecture
+
+> Authority on: tech stack, folder structure, how the pieces fit together.
+> Update this file whenever a structural decision changes — don't let it
+> go stale, an AI session trusts this over its own guess.
+
+## Tech Stack
+
+| Layer | Choice | Notes |
+|---|---|---|
+| Backend | Node.js + Express + TypeScript | TS from day one, no JS-to-TS migration debt like the PBS codebase |
+| Database | MongoDB (Mongoose) | Atlas free tier for MVP |
+| Realtime | Socket.IO | Single instance for MVP, no Redis adapter yet |
+| Web app | React + TypeScript + Tailwind | Admin dashboard + public tracking page |
+| Mobile app | React Native (Expo, managed workflow) | Driver app only, for now |
+| Maps | Leaflet + OpenStreetMap (or Google Maps free tier) | Decide per cost, see docs/DECISIONS.md |
+| Auth | JWT (access + refresh) | Org Admin: email+password. Driver: phone+OTP |
+| SMS/OTP | MSG91 or Fast2SMS | India-focused, cheap |
+| Hosting (MVP) | Railway or Render (backend), Vercel/Netlify (web) | Cheap tier, upgrade only when needed |
+
+## Repo Structure
+
+```
+/backend
+  /src
+    /core
+      /vehicle
+      /driver
+      /route
+      /trip
+      /tracking       ← Socket.IO handlers
+      /auth
+      /organization
+    /verticals         ← EMPTY until a vertical phase starts
+    /shared
+      /middleware      ← tenant isolation, auth guards
+      /models
+  docs -> ../docs (symlink or just reference, single source of truth lives at repo root)
+
+/web
+  /src
+    /pages
+      /dashboard
+      /vehicles
+      /drivers
+      /routes
+      /trips
+      /track/[token]   ← PUBLIC route, no auth required
+    /components
+    /lib               ← socket client, api client
+
+/mobile
+  /app (Expo router or navigation stack)
+    /login
+    /driver-dashboard
+    /trip
+
+/docs                  ← the single source of truth, read by every AI tool
+```
+
+## Core Design Rule: Tenant Isolation
+
+Every document in every core collection (except `organizations` itself)
+carries an `organizationId`. This is enforced in middleware — never rely
+on individual controllers/queries to remember to filter by org. See
+`docs/DATA-MODELS.md` for the exact fields, and `docs/CONVENTIONS.md` for
+how the query wrapper should work.
+
+For Phase 0 specifically: there is no multi-tenancy yet (single hardcoded
+org). The schema still includes `organizationId` from day one so Phase 1
+doesn't require a migration — but Phase 0 code doesn't need to fully
+enforce isolation across multiple orgs since there's only one.
+
+## Real-Time Architecture (MVP)
+
+```
+Driver App (Expo)              Web Dashboard / Public Tracking Page
+    │                                    │
+    │ emit('location:update')          listen('location:update')
+    ▼                                    ▲
+          Socket.IO Server (single instance)
+                      │
+                joins room: trip_<tripId>
+```
+
+See `docs/DECISIONS.md` for why no Redis/multi-server setup yet, and
+`docs/DATA-MODELS.md` for the exact socket event payload shapes.
+
+## Public Tracking Link
+
+A route like `/track/:token` on the web app, unauthenticated, read-only.
+Token is a random UUID stored on the Trip document, not the Trip's
+database `_id`. See `docs/DATA-MODELS.md` for the Trip schema field, and
+`docs/DECISIONS.md` for why this replaces end-customer accounts.

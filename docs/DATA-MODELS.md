@@ -1,0 +1,144 @@
+# TransportFlow — Data Models
+
+> This file is the SINGLE SOURCE OF TRUTH for all schemas. If code and
+> this file disagree, this file wins — fix the code, or update this file
+> FIRST and explain why, then fix the code to match.
+>
+> AI assistants: do not invent new fields, rename fields, or add
+> collections without updating this file in the same task.
+
+## Organization
+
+```ts
+{
+  _id: ObjectId,
+  name: string,
+  orgType: "gas" | "school" | "corporate" | "generic",  // for future vertical routing, unused in Phase 0
+  createdAt: Date,
+  isActive: boolean
+}
+```
+
+## User (Org Admin / Manager)
+
+```ts
+{
+  _id: ObjectId,
+  organizationId: ObjectId,
+  name: string,
+  email: string,
+  passwordHash: string,
+  role: "org_admin" | "manager",
+  createdAt: Date
+}
+```
+
+## Driver
+
+```ts
+{
+  _id: ObjectId,
+  organizationId: ObjectId,
+  name: string,
+  phone: string,           // used for OTP login
+  licenseNumber: string,
+  status: "active" | "inactive",
+  assignedVehicleId: ObjectId | null,
+  createdAt: Date
+}
+```
+
+## Vehicle
+
+```ts
+{
+  _id: ObjectId,
+  organizationId: ObjectId,
+  vehicleNumber: string,
+  type: string,             // free text for now: "truck", "bus", "van" etc.
+  capacity: number | null,
+  status: "active" | "inactive" | "maintenance",
+  createdAt: Date
+}
+```
+
+## Route
+
+```ts
+{
+  _id: ObjectId,
+  organizationId: ObjectId,
+  name: string,
+  stops: [
+    {
+      order: number,
+      label: string,
+      lat: number,
+      lng: number
+    }
+  ],
+  createdAt: Date
+}
+```
+
+## Trip
+
+```ts
+{
+  _id: ObjectId,
+  organizationId: ObjectId,
+  routeId: ObjectId,
+  vehicleId: ObjectId,
+  driverId: ObjectId,
+  status: "scheduled" | "in_progress" | "completed",
+  publicTrackingToken: string,   // random UUID, generated on trip creation
+  scheduledAt: Date,
+  startedAt: Date | null,
+  endedAt: Date | null,
+  lastKnownLocation: {
+    lat: number,
+    lng: number,
+    updatedAt: Date
+  } | null,
+  createdAt: Date
+}
+```
+
+## LocationBreadcrumb (optional, for playback — not required for Phase 0 live view)
+
+```ts
+{
+  _id: ObjectId,
+  tripId: ObjectId,
+  lat: number,
+  lng: number,
+  timestamp: Date
+}
+// TTL index on timestamp: auto-expire after 30-90 days (decide exact value before Phase 1)
+```
+
+## Socket.IO Event Payloads
+
+```ts
+// Client -> Server
+"trip:join"          { tripId: string }
+"trip:leave"         { tripId: string }
+"location:update"    { tripId: string, lat: number, lng: number, timestamp: string, speed?: number }
+
+// Server -> Client
+"location:broadcast" { tripId: string, driverId: string, lat: number, lng: number, timestamp: string }
+"trip:status_changed"{ tripId: string, status: "scheduled" | "in_progress" | "completed" }
+```
+
+## JWT Payload
+
+```ts
+{
+  userId: string,
+  organizationId: string,
+  orgType: string,
+  role: "super_admin" | "org_admin" | "manager" | "driver",
+  iat: number,
+  exp: number
+}
+```
