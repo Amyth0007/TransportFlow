@@ -53,3 +53,15 @@ complexity. Schema still includes `organizationId` from day one so Phase
 Amyth's day job uses Angular/PrimeNG, but for this new product React was
 chosen: larger ecosystem, easier future hiring, more mature
 Leaflet/Socket.IO integration examples.
+
+### 2026-07-05 — req.org middleware pattern for organizationId propagation
+Controllers must never read `organizationId` from env vars, request params,
+or body directly. Instead, a single middleware (`attachOrgContext`) sets
+`req.org = { organizationId }` before any `/api` route handler runs.
+
+Phase 0 implementation: middleware reads `process.env.PHASE0_ORG_ID`.
+Phase 1 migration: replace the middleware body only — verify JWT, extract
+`organizationId` from the payload, assign to `req.org`. The shape of
+`req.org.organizationId` does not change, so zero controller code needs
+editing. This is the pattern to use for every core module (Driver, Route,
+Trip, etc.) going forward.

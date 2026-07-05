@@ -2,23 +2,18 @@ import { Request, Response } from 'express';
 import * as vehicleService from './vehicle.service';
 import type { VehicleDoc } from './vehicle.service';
 
-// ── Phase 0 note ──────────────────────────────────────────────────────────────
-// organizationId is read from an env variable rather than from a JWT,
-// because Phase 0 is single-org with no auth middleware yet.
-// In Phase 1 this becomes: const { organizationId } = req.user;
-// and every handler below stays unchanged.
-function getOrgId(_req: Request): string {
-  const orgId = process.env.PHASE0_ORG_ID ?? '';
-  return orgId;
-}
+// organizationId is read from req.org.organizationId, set by the
+// attachOrgContext middleware. In Phase 0 that middleware reads from
+// PHASE0_ORG_ID env var; in Phase 1 it decodes the JWT instead.
+// Nothing in this file changes when that swap happens.
 
 export async function listVehicles(req: Request, res: Response): Promise<void> {
-  const vehicles: VehicleDoc[] = await vehicleService.listVehicles(getOrgId(req));
+  const vehicles: VehicleDoc[] = await vehicleService.listVehicles(req.org.organizationId);
   res.json({ data: vehicles });
 }
 
 export async function getVehicle(req: Request, res: Response): Promise<void> {
-  const vehicle = await vehicleService.getVehicle(getOrgId(req), req.params.id);
+  const vehicle = await vehicleService.getVehicle(req.org.organizationId, req.params.id);
   if (!vehicle) {
     res.status(404).json({ error: 'Vehicle not found' });
     return;
@@ -39,7 +34,7 @@ export async function createVehicle(req: Request, res: Response): Promise<void> 
     return;
   }
 
-  const vehicle = await vehicleService.createVehicle(getOrgId(req), {
+  const vehicle = await vehicleService.createVehicle(req.org.organizationId, {
     vehicleNumber,
     type,
     capacity,
@@ -56,7 +51,7 @@ export async function updateVehicle(req: Request, res: Response): Promise<void> 
     status?: VehicleDoc['status'];
   };
 
-  const vehicle = await vehicleService.updateVehicle(getOrgId(req), req.params.id, {
+  const vehicle = await vehicleService.updateVehicle(req.org.organizationId, req.params.id, {
     vehicleNumber,
     type,
     capacity,
@@ -71,7 +66,7 @@ export async function updateVehicle(req: Request, res: Response): Promise<void> 
 }
 
 export async function deactivateVehicle(req: Request, res: Response): Promise<void> {
-  const vehicle = await vehicleService.deactivateVehicle(getOrgId(req), req.params.id);
+  const vehicle = await vehicleService.deactivateVehicle(req.org.organizationId, req.params.id);
   if (!vehicle) {
     res.status(404).json({ error: 'Vehicle not found' });
     return;
