@@ -9,6 +9,7 @@ import { driverRouter } from './core/driver/driver.router';
 import { routeRouter } from './core/route/route.router';
 import { tripRouter } from './core/trip/trip.router';
 import { authRouter } from './core/auth/auth.router';
+import { organizationRouter } from './core/organization/organization.router';
 import { registerTrackingHandlers } from './core/tracking/tracking.handler';
 import { getTripByToken } from './core/trip/trip.controller';
 import { setIO } from './shared/io';
@@ -23,6 +24,9 @@ app.get('/health', (_req, res) => {
 
 // ── Public endpoints (no auth, no org context) ───────────────────────────────
 app.get('/api/public/trips/:token', getTripByToken);
+
+// ── Super Admin endpoints (own auth inside the router) ───────────────────────
+app.use('/api/admin/orgs', organizationRouter);
 
 // ── Auth middleware (all /api routes except /api/auth/* and /api/public/*) ──
 // requireAuth verifies the JWT and sets req.user.
