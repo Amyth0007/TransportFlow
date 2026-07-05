@@ -8,6 +8,27 @@
 
 ---
 
+### 2026-07-05 — Amazon Q — Trip CRUD + Route delete guard
+
+Done:
+- `trip.service.ts` — `listTrips`, `getTrip`, `createTrip` (validates routeId/vehicleId/driverId all exist in the same org, generates `publicTrackingToken` via `randomUUID()`), `startTrip` (rejects if already `in_progress` or `completed`), `endTrip` (rejects if `scheduled` or already `completed`). Status-transition errors carry a `.status` property so the controller maps them to the right HTTP code.
+- `trip.controller.ts` + `trip.router.ts` — thin controller, same pattern as Vehicle/Driver/Route. `handleServiceError` helper reads `error.status` for the HTTP code.
+- Registered at `GET/POST /api/trips` and `PATCH /api/trips/:id/start|end` in `index.ts`. No DELETE endpoint (out of scope for Phase 0).
+- Route delete guard: `deleteRoute` in `route.service.ts` now checks for any `scheduled` or `in_progress` trip referencing the route before deleting. Returns 409 with a clear message if blocked. Completed trips referencing a deleted route are allowed (history).
+- TypeScript compiles with `--strict` and zero errors across all changes.
+
+Left / next:
+- Socket.IO server (`trip:join`, `trip:leave`, `location:update`, `location:broadcast`, `trip:status_changed` — exact payloads in `docs/DATA-MODELS.md`)
+- Update `Trip.lastKnownLocation` on every `location:update` event
+- Web app (React + Tailwind)
+- Mobile app (Expo)
+
+Notes / gotchas:
+- Trip service throws errors with an attached `.status` property (e.g. `Object.assign(new Error(...), { status: 409 })`). The controller reads this to set the HTTP response code — keeps all business logic out of the controller.
+- `startTrip`/`endTrip` do a read-then-write (findOne + findByIdAndUpdate) rather than a single findOneAndUpdate with a status filter, so the error message can be specific about *why* the transition was rejected.
+
+---
+
 ### 2026-07-05 — Amazon Q — Route CRUD
 
 Done:
