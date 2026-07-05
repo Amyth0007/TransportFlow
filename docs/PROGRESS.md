@@ -8,6 +8,29 @@
 
 ---
 
+### 2026-07-05 — Amazon Q — Socket.IO real-time tracking server
+
+Done:
+- Installed `socket.io` (ships its own TS types, no separate `@types` package needed).
+- Created `src/core/tracking/tracking.handler.ts` — registers all four events per `docs/DATA-MODELS.md` payloads:
+  - `trip:join` / `trip:leave` — socket joins/leaves `trip_<tripId>` room.
+  - `location:update` — writes `lastKnownLocation` to the Trip document (simple overwrite, no history for Phase 0), then broadcasts `location:broadcast` to the room via `io.to()`.
+  - `trip:status_changed` — re-broadcasts to the room (allows driver app to emit on reconnect).
+- Updated `index.ts` — wrapped Express app in `http.createServer`, attached `SocketIOServer` to it. CORS origin is `*` for Phase 0; lock down in Phase 1. Single instance, no Redis adapter (per `docs/DECISIONS.md`).
+- TypeScript compiles with `--strict` and zero errors.
+
+Left / next:
+- Web app (React + Tailwind): admin login, Vehicles/Drivers/Routes/Trips pages, live map (Leaflet + Socket.IO), public tracking page at `/track/:token`
+- Mobile app (Expo): driver login, today's trip screen, start/end trip with foreground GPS + `location:update` emit
+- Also: emit `trip:status_changed` from the REST `start`/`end` endpoints so connected clients update automatically without polling
+
+Notes / gotchas:
+- `location:update` DB errors are swallowed silently in the handler — a missed ping is acceptable; crashing the socket connection is not.
+- `socket.data.driverId` is used to populate the `driverId` field in `location:broadcast`. The driver app should set this on connect (e.g. via auth handshake or a `socket.data` assignment after JWT verification — Phase 1 concern).
+- `app.listen` is gone; the server now starts via `httpServer.listen`. The exported `app` is still available for testing.
+
+---
+
 ### 2026-07-05 — Amazon Q — Trip CRUD + Route delete guard
 
 Done:
