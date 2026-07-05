@@ -8,6 +8,22 @@
 
 ---
 
+### 2026-07-05 — Amazon Q — Phase 0 complete + Phase 1 planning
+
+Done:
+- All 8 steps of the Phase 0 Definition of Done passed on a real device.
+- `docs/CURRENT-PHASE.md` updated to point to Phase 1.
+- `docs/PHASE-1-PLAN.md` rewritten with exact scope based on two decisions:
+  - Super Admin provisions org + first Org Admin (no self-signup).
+  - Manager role deferred to Phase 2.
+- Two new entries added to `docs/DECISIONS.md`.
+- Phase 1 build order: (1) `requireAuth` + `attachOrgContext` JWT swap, (2) Super Admin seed + middleware, (3) Org CRUD backend, (4) Super Admin web panel, (5) cross-org isolation smoke test.
+
+Left / next:
+- Phase 1 Step 1: `requireAuth` middleware + `attachOrgContext` swap (replace `PHASE0_ORG_ID` with real JWT decode).
+
+---
+
 ### 2026-07-05 — Amazon Q — Mobile app (Expo) + backend status_changed emit
 
 Done:

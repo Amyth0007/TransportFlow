@@ -70,12 +70,23 @@ Trip, etc.) going forward.
 Initially chosen for better UX on mobile (no password memory overhead for drivers).
 Uses a 4-digit code generated and verified on the server, intended to integrate with MSG91 or Fast2SMS.
 
-### 2026-07-05 — Switch Driver Auth to Phone + Password (manager-generated)
-Supersedes the phone + OTP login design for the MVP. Instead of requesting and verifying OTPs,
-the manager auto-generates a random secure password when creating the Driver in the system. The plaintext password is shown once to the manager to share with the driver.
+### 2026-07-05 — Super Admin provisioning flow (no self-signup)
+Org onboarding is controlled: a Super Admin creates the organization and
+the first Org Admin in a single API call. There is no self-signup flow.
 
 **Rationale:**
-- Simpler implementation for Phase 0 (no SMS provider integration overhead, no complex mocks).
-- Trivial onboarding loop: the manager is already creating the Driver record, so handing over a password at that moment requires zero additional workflows.
-- No forgot-password or self-reset flow is required for the MVP; password can be reset by the manager if lost.
+- Prevents arbitrary orgs being created on the platform without approval.
+- Simpler auth surface — no email verification, no invite tokens, no
+  signup form to build or secure.
+- Revisit only if the business model shifts to self-serve SaaS.
 
+### 2026-07-05 — Manager role deferred to Phase 2
+Phase 1 has two roles only: `super_admin` and `org_admin`. The Manager
+role (same permissions as Org Admin minus org settings and admin
+creation) is deferred to Phase 2.
+
+**Rationale:**
+- Phase 1's goal is purely the auth/multi-tenancy swap. Adding a third
+  role adds permission-check surface area without advancing that goal.
+- The `role` field is already in the JWT payload and User schema, so
+  adding `manager` in Phase 2 requires no schema migration.
