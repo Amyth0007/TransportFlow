@@ -44,10 +44,15 @@ export async function updateRoute(req: Request, res: Response): Promise<void> {
 }
 
 export async function deleteRoute(req: Request, res: Response): Promise<void> {
-  const route = await routeService.deleteRoute(req.org.organizationId, req.params.id);
-  if (!route) {
-    res.status(404).json({ error: 'Route not found' });
-    return;
+  try {
+    const route = await routeService.deleteRoute(req.org.organizationId, req.params.id);
+    if (!route) {
+      res.status(404).json({ error: 'Route not found' });
+      return;
+    }
+    res.json({ data: route });
+  } catch (error: any) {
+    const status = error.status ?? 500;
+    res.status(status).json({ error: error.message ?? 'Internal server error' });
   }
-  res.json({ data: route });
 }

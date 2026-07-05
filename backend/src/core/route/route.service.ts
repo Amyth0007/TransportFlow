@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { Route } from '../../shared/models';
+import { Route, Trip } from '../../shared/models';
 
 export interface StopDoc {
   order: number;
@@ -82,11 +82,30 @@ export async function updateRoute(
   ).lean<RouteDoc>();
 }
 
-/** Delete a route by id, scoped to the organization. Returns null if not found. */
+/**
+ * Delete a route by id, scoped to the organization.
+ * Blocked if any trip referencing this route is currently scheduled or in_progress
+ * (completed trips are fine — that's just history).
+ * Returns null if the route is not found.
+ */
 export async function deleteRoute(
   organizationId: string,
   routeId: string
 ): Promise<RouteDoc | null> {
   if (!Types.ObjectId.isValid(routeId)) return null;
+
+  const activeTrip = await Trip.findOne({
+    routeId,
+    organizationId,
+    status: { $in: ['scheduled', 'in_progress'] },
+  }).lean();
+
+  if (activeTrip) {
+    throw Object.assign(
+      new Error('Cannot delete a route that has scheduled or in-progress trips'),
+      { status: 409 }
+    );
+  }
+
   return Route.findOneAndDelete({ _id: routeId, organizationId }).lean<RouteDoc>();
 }
