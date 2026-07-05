@@ -8,6 +8,26 @@
 
 ---
 
+### 2026-07-05 — Antigravity — Driver CRUD + OTP Login & req.org Integration
+
+Done:
+- Integrated the typed `req.org` middleware stub into the Express application. Refactored the Vehicle controller to retrieve the `organizationId` from `req.org.organizationId` instead of accessing `process.env.PHASE0_ORG_ID` directly.
+- Added a decision record to `docs/DECISIONS.md` documenting this choice.
+- Created `Driver` model and CRUD REST endpoints (`GET/POST /api/drivers` and `GET/PATCH/DELETE /api/drivers/:id`) scoped via the `req.org` middleware.
+- Implemented **Driver OTP login** flow:
+  - `POST /api/auth/driver/otp/send`: Generates a random 4-digit OTP, stores it in an in-memory map, and console logs it.
+  - `POST /api/auth/driver/otp/verify`: Validates the phone number and OTP, then issues a JWT signed token matching the payload structure in `docs/DATA-MODELS.md`.
+  - Installed `jsonwebtoken` package with its TS type definitions to handle token generation.
+
+Left / next:
+- Route CRUD (name + ordered stops with lat/lng)
+- Trip CRUD (route, vehicle, driver assignment) + token generation
+- Socket.IO server setup for real-time tracking loops
+
+Notes / gotchas:
+- Kept the OTP store entirely in-memory to prevent adding fields (like otp code) to the `Driver` DB schema, maintaining strict alignment with `docs/DATA-MODELS.md`.
+- Express Request types are globally augmented at `backend/src/@types/express/index.d.ts`.
+
 ### 2026-07-05 — Antigravity — Backend scaffold + schemas + seed + Vehicle CRUD
 
 Done:
