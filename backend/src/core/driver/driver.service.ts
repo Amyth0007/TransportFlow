@@ -1,4 +1,6 @@
 import { Types } from 'mongoose';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 import { Driver } from '../../shared/models';
 
 export type DriverDoc = {
@@ -6,6 +8,7 @@ export type DriverDoc = {
   organizationId: Types.ObjectId;
   name: string;
   phone: string;
+  passwordHash: string;
   licenseNumber: string;
   status: 'active' | 'inactive';
   assignedVehicleId: Types.ObjectId | null;
@@ -45,24 +48,39 @@ export async function getDriver(
   return Driver.findOne({ _id: driverId, organizationId }).lean<DriverDoc>();
 }
 
-/** Create a new driver for the organization. */
+/** 
+ * Create a new driver for the organization.
+ * Generates a random temporary password, hashes it using bcrypt, and returns
+ * the plaintext password alongside the saved Driver document.
+ */
 export async function createDriver(
   organizationId: string,
   input: CreateDriverInput
-): Promise<DriverDoc> {
+): Promise<{ driver: DriverDoc; tempPassword: string }> {
   const assignedVehicleId = input.assignedVehicleId && Types.ObjectId.isValid(input.assignedVehicleId)
     ? new Types.ObjectId(input.assignedVehicleId)
     : null;
+
+  // Generate a random 8-character alphanumeric password
+  const tempPassword = crypto.randomBytes(4).toString('hex');
+  
+  // Hash the password using bcrypt (rounds = 10)
+  const passwordHash = await bcrypt.hash(tempPassword, 10);
 
   const doc = await Driver.create({
     organizationId,
     name: input.name,
     phone: input.phone,
+    passwordHash,
     licenseNumber: input.licenseNumber,
     status: input.status ?? 'active',
     assignedVehicleId,
   });
-  return doc.toObject<DriverDoc>();
+
+  return {
+    driver: doc.toObject<DriverDoc>(),
+    tempPassword,
+  };
 }
 
 /** Update a driver by id, scoped to the organization. Returns null if not found. */

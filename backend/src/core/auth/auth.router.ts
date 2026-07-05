@@ -1,7 +1,8 @@
 import { Router } from 'express';
+import * as controller from './auth.controller';
 
 const router = Router();
 
-// OTP endpoints removed. Password login to be added next.
+router.post('/driver/login', controller.loginDriver);
 
 export { router as authRouter };

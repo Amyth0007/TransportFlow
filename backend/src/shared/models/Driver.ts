@@ -4,6 +4,7 @@ export interface IDriver extends Document {
   organizationId: Types.ObjectId;
   name: string;
   phone: string;
+  passwordHash: string;
   licenseNumber: string;
   status: 'active' | 'inactive';
   assignedVehicleId: Types.ObjectId | null;
@@ -15,6 +16,7 @@ const driverSchema = new Schema<IDriver>(
     organizationId: { type: Schema.Types.ObjectId, required: true, ref: 'Organization' },
     name: { type: String, required: true },
     phone: { type: String, required: true, unique: true },
+    passwordHash: { type: String, required: true },
     licenseNumber: { type: String, required: true },
     status: {
       type: String,

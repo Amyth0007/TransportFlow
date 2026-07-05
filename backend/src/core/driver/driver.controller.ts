@@ -31,14 +31,14 @@ export async function createDriver(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const driver = await driverService.createDriver(req.org.organizationId, {
+    const { driver, tempPassword } = await driverService.createDriver(req.org.organizationId, {
       name,
       phone,
       licenseNumber,
       status,
       assignedVehicleId,
     });
-    res.status(201).json({ data: driver });
+    res.status(201).json({ data: driver, tempPassword });
   } catch (error: any) {
     if (error.code === 11000) {
       res.status(409).json({ error: 'Phone number already registered' });
