@@ -8,6 +8,31 @@
 
 ---
 
+### 2026-07-05 — Amazon Q — Web app + admin login endpoint
+
+Done:
+- Backend: `POST /api/auth/admin/login` — email+password, bcrypt compare, JWT matching DATA-MODELS.md payload. Fixed seed script to use bcrypt instead of SHA-256 placeholder (seed must be re-run for admin login to work).
+- Backend: `GET /api/public/trips/:token` — public endpoint, no auth, no org context. Registered before `attachOrgContext` middleware. Used by the public tracking page.
+- Web app scaffolded at `/web` — Vite + React + TypeScript + Tailwind v4 (CSS-first, `@tailwindcss/vite` plugin). Dev proxy in `vite.config.ts` forwards `/api` and `/socket.io` to `localhost:3000`.
+- `src/lib/api.ts` — axios instance, auto-injects `Authorization: Bearer` from localStorage. Shared TypeScript types for all entities.
+- `src/lib/socket.ts` — singleton Socket.IO client, lazy-connect.
+- `src/lib/auth.ts` — login/logout/isLoggedIn helpers.
+- Pages: Login, Vehicles (list/add/edit/deactivate), Drivers (list/add/edit/deactivate, shows tempPassword on create), Routes (list/add/edit/delete with dynamic stops form), Trips (list/create), TripDetail (live map, start/end buttons, copy tracking link), PublicTrackingPage (`/track/:token`, no auth).
+- `LiveMap` component — Leaflet + OpenStreetMap, draws route stop markers, moves vehicle marker on `location:broadcast` Socket.IO events, joins/leaves `trip_<tripId>` room.
+- `ProtectedRoute` + `Layout` (sidebar nav) components.
+- Both backend and web TypeScript compile with zero errors.
+
+Left / next:
+- Mobile app (Expo): driver login, today's trip screen, start/end trip with foreground GPS + `location:update` emit, reconnect handling
+- Re-run `npm run seed` in `/backend` before first login (seed now uses bcrypt)
+
+Notes / gotchas:
+- Tailwind v4 is CSS-first — no `tailwind.config.js`, uses `@import "tailwindcss"` in `index.css` and `@tailwindcss/vite` plugin. The old `npx tailwindcss init` CLI does not exist in v4.
+- Public tracking page uses `/api/public/trips/:token` (no auth). The route/vehicle/driver name lookups on that page still go through the org-scoped endpoints — they work in Phase 0 because there's only one org and `PHASE0_ORG_ID` is set. Phase 1: add public endpoints for those too, or embed names in the trip document.
+- Leaflet default icon paths break with Vite bundling — fixed in `LiveMap.tsx` by manually overriding `L.Icon.Default` options with explicit imports.
+
+---
+
 ### 2026-07-05 — Amazon Q — Socket.IO real-time tracking server
 
 Done:
