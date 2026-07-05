@@ -1,5 +1,7 @@
 import 'dotenv/config';
+import http from 'http';
 import express from 'express';
+import { Server as SocketIOServer } from 'socket.io';
 import { connectDB } from './shared/db';
 import { attachOrgContext } from './shared/middleware/orgContext';
 import { vehicleRouter } from './core/vehicle/vehicle.router';
@@ -7,6 +9,7 @@ import { driverRouter } from './core/driver/driver.router';
 import { routeRouter } from './core/route/route.router';
 import { tripRouter } from './core/trip/trip.router';
 import { authRouter } from './core/auth/auth.router';
+import { registerTrackingHandlers } from './core/tracking/tracking.handler';
 
 const app = express();
 app.use(express.json());
@@ -32,7 +35,22 @@ const PORT = process.env.PORT ?? 3000;
 
 async function start(): Promise<void> {
   await connectDB();
-  app.listen(PORT, () => {
+
+  const httpServer = http.createServer(app);
+
+  // ── Socket.IO ─────────────────────────────────────────────────────────────
+  // Single instance, no Redis adapter (see docs/DECISIONS.md).
+  // CORS origin is open for Phase 0; lock down in Phase 1 when web/mobile
+  // origins are known.
+  const io = new SocketIOServer(httpServer, {
+    cors: { origin: '*' },
+  });
+
+  io.on('connection', (socket) => {
+    registerTrackingHandlers(io, socket);
+  });
+
+  httpServer.listen(PORT, () => {
     console.log(`TransportFlow backend listening on port ${PORT}`);
   });
 }
