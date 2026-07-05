@@ -65,3 +65,17 @@ Phase 1 migration: replace the middleware body only — verify JWT, extract
 `req.org.organizationId` does not change, so zero controller code needs
 editing. This is the pattern to use for every core module (Driver, Route,
 Trip, etc.) going forward.
+
+### 2026-07-05 — Driver authentication using Phone + OTP (SUPERSEDED — see entry below)
+Initially chosen for better UX on mobile (no password memory overhead for drivers).
+Uses a 4-digit code generated and verified on the server, intended to integrate with MSG91 or Fast2SMS.
+
+### 2026-07-05 — Switch Driver Auth to Phone + Password (manager-generated)
+Supersedes the phone + OTP login design for the MVP. Instead of requesting and verifying OTPs,
+the manager auto-generates a random secure password when creating the Driver in the system. The plaintext password is shown once to the manager to share with the driver.
+
+**Rationale:**
+- Simpler implementation for Phase 0 (no SMS provider integration overhead, no complex mocks).
+- Trivial onboarding loop: the manager is already creating the Driver record, so handing over a password at that moment requires zero additional workflows.
+- No forgot-password or self-reset flow is required for the MVP; password can be reset by the manager if lost.
+

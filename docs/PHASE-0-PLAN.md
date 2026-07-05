@@ -16,7 +16,7 @@ no notifications.
 **Backend**
 - [ ] Vehicle CRUD (create, list, update, deactivate)
 - [ ] Driver CRUD (create, list, update, deactivate)
-- [ ] Driver auth: phone + OTP login, returns JWT
+- [ ] Driver auth: phone + password login (manager-generated), returns JWT
 - [ ] Route CRUD (name + ordered stops with lat/lng)
 - [ ] Trip: create (select route + vehicle + driver + schedule time),
       start, end, list
@@ -45,7 +45,7 @@ no notifications.
 - [ ] "Copy tracking link" button on the trip detail page
 
 **Mobile App (Expo, driver-only)**
-- [ ] Login screen (phone + OTP)
+- [ ] Login screen (phone + password)
 - [ ] Today's trip screen (shows assigned trip if one exists, empty
       state if not)
 - [ ] Start Trip button → begins foreground GPS tracking (expo-location)
