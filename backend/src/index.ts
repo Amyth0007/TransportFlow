@@ -3,7 +3,7 @@ import http from 'http';
 import express from 'express';
 import { Server as SocketIOServer } from 'socket.io';
 import { connectDB } from './shared/db';
-import { attachOrgContext } from './shared/middleware/orgContext';
+import { attachOrgContext, requireAuth } from './shared/middleware/orgContext';
 import { vehicleRouter } from './core/vehicle/vehicle.router';
 import { driverRouter } from './core/driver/driver.router';
 import { routeRouter } from './core/route/route.router';
@@ -24,10 +24,16 @@ app.get('/health', (_req, res) => {
 // ── Public endpoints (no auth, no org context) ───────────────────────────────
 app.get('/api/public/trips/:token', getTripByToken);
 
-// ── Org context middleware (applies to all /api routes) ──────────────────────
-// Phase 0: reads PHASE0_ORG_ID from env.
-// Phase 1: will decode JWT instead. req.org.organizationId shape stays identical.
-app.use('/api', attachOrgContext);
+// ── Auth middleware (all /api routes except /api/auth/* and /api/public/*) ──
+// requireAuth verifies the JWT and sets req.user.
+// attachOrgContext reads req.user.organizationId into req.org.
+// Controllers never change — they still read req.org.organizationId.
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/auth/') || req.path.startsWith('/public/')) {
+    return next();
+  }
+  requireAuth(req, res, () => attachOrgContext(req, res, next));
+});
 
 // ── Core routers ─────────────────────────────────────────────────────────────
 app.use('/api/vehicles', vehicleRouter);
