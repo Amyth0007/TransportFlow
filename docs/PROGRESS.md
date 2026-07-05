@@ -8,16 +8,18 @@
 
 ---
 
-### 2026-07-05 — Antigravity — Driver CRUD + OTP Login & req.org Integration
+### 2026-07-05 — Antigravity — Driver CRUD + Password Login & req.org Integration
 
 Done:
 - Integrated the typed `req.org` middleware stub into the Express application. Refactored the Vehicle controller to retrieve the `organizationId` from `req.org.organizationId` instead of accessing `process.env.PHASE0_ORG_ID` directly.
 - Added a decision record to `docs/DECISIONS.md` documenting this choice.
 - Created `Driver` model and CRUD REST endpoints (`GET/POST /api/drivers` and `GET/PATCH/DELETE /api/drivers/:id`) scoped via the `req.org` middleware.
-- Implemented **Driver OTP login** flow:
-  - `POST /api/auth/driver/otp/send`: Generates a random 4-digit OTP, stores it in an in-memory map, and console logs it.
-  - `POST /api/auth/driver/otp/verify`: Validates the phone number and OTP, then issues a JWT signed token matching the payload structure in `docs/DATA-MODELS.md`.
-  - Installed `jsonwebtoken` package with its TS type definitions to handle token generation.
+- Transitioned Driver Auth from phone+OTP to phone+password (manager-generated):
+  - Updated Driver Mongoose model to include `passwordHash: string`.
+  - Added auto-generation of 8-character secure random passwords during driver creation (`POST /api/drivers`). Plaintext password is returned *only once* in the creation response (`tempPassword`) and stored hashed using `bcrypt`.
+  - Removed all OTP routes, controllers, and services.
+  - Implemented single login endpoint (`POST /api/auth/driver/login`) that compares passwords using `bcrypt` and returns JWT token matching the payload structure in `docs/DATA-MODELS.md`.
+  - Installed `jsonwebtoken` and `bcrypt` packages with their TS type definitions to handle token generation and hashing.
 
 Left / next:
 - Route CRUD (name + ordered stops with lat/lng)
