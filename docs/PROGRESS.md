@@ -8,6 +8,34 @@
 
 ---
 
+### 2026-07-05 — Amazon Q — Mobile app (Expo) + backend status_changed emit
+
+Done:
+- Backend: `shared/io.ts` singleton — `setIO`/`getIO` so the trip service can reach the Socket.IO instance. `startTrip` and `endTrip` now emit `trip:status_changed` to the trip room after updating the DB, so the web dashboard updates without polling.
+- Mobile app at `/mobile` (Expo managed workflow, SDK 57, React Native 0.86):
+  - Dependencies: `expo-location`, `socket.io-client`, `axios`, `@react-native-async-storage/async-storage`, `@react-navigation/native`, `@react-navigation/native-stack`.
+  - `app.json` — name/slug set, `NSLocationWhenInUseUsageDescription` (iOS) and `ACCESS_FINE_LOCATION` (Android) permissions declared.
+  - `src/lib/api.ts` — axios client, base URL from `EXPO_PUBLIC_API_URL` env var (falls back to `localhost:3000`), token injected via module-level ref set on login.
+  - `src/lib/auth.ts` — `login` (calls `/api/auth/driver/login`, persists token + driver info to AsyncStorage), `logout`, `loadStoredAuth` (bootstraps token on app launch).
+  - `src/lib/socket.ts` — singleton Socket.IO client, `websocket` transport only.
+  - `LoginScreen` — phone + password form, navigates to TripScreen on success.
+  - `TripScreen` — loads most recent non-completed trip for the logged-in driver; Start Trip button (requests foreground location permission, calls REST start, begins GPS interval); End Trip button (calls REST end, stops GPS, emits `trip:status_changed` + `trip:leave`); reconnect handler re-emits `trip:join` on socket `connect` event; logout with confirmation alert.
+  - GPS loop: `Location.getCurrentPositionAsync` every 5 seconds, emits `location:update` with exact DATA-MODELS.md payload shape.
+  - `App.tsx` — `NavigationContainer` + native stack, bootstraps stored auth on launch (shows spinner while loading).
+- Both backend and mobile TypeScript compile with zero errors.
+
+Left / next:
+- End-to-end test: run backend, open web app, create vehicle/driver/route/trip, scan QR with Expo Go on a real device, log in as driver, start trip, verify live marker moves on web dashboard and public tracking page, end trip.
+- Create a `mobile/.env` with `EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:3000` before testing on a physical device (localhost won't reach the backend from a phone).
+- Phase 0 Definition of Done: all 8 steps in `docs/PHASE-0-PLAN.md` pass end-to-end.
+
+Notes / gotchas:
+- `EXPO_PUBLIC_API_URL` must be set to your machine's LAN IP (e.g. `http://192.168.1.x:3000`) when running on a physical device via Expo Go. Android emulator uses `http://10.0.2.2:3000`, iOS simulator uses `localhost`.
+- `socket.io-client` is forced to `websocket` transport only (`transports: ['websocket']`) — React Native doesn't support the polling fallback reliably.
+- The trip screen finds "today's trip" by filtering for the most recent non-completed trip where `driverId` matches. Phase 1: add a dedicated `/api/trips/my` endpoint scoped by JWT `userId` instead of filtering client-side.
+
+---
+
 ### 2026-07-05 — Amazon Q — Web app + admin login endpoint
 
 Done:
