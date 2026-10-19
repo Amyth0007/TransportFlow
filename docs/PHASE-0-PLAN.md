@@ -1,8 +1,9 @@
 # TransportFlow — Phase 0 Plan (Core Tracking Engine)
 
-> This is the CURRENT phase. Anything not listed under "In Scope" is out
-> of scope — do not build it, even if it seems related or easy to add
-> while you're in that file.
+> HISTORICAL. Phase 0 is complete (2026-07-05). Current work is
+> `docs/CURRENT-PHASE.md` → `docs/STABILIZE-WEB-PLAN.md`.
+> Do not treat this file as the live scope. Maps: Leaflet below was
+> superseded by Google Maps (`docs/DECISIONS.md`).
 
 ## Goal
 

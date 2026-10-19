@@ -17,6 +17,7 @@ export interface ITrip extends Document {
   startedAt: Date | null;
   endedAt: Date | null;
   lastKnownLocation: ILastKnownLocation | null;
+  currentStopIndex: number;
   createdAt: Date;
 }
 
@@ -46,6 +47,7 @@ const tripSchema = new Schema<ITrip>(
     startedAt: { type: Date, default: null },
     endedAt: { type: Date, default: null },
     lastKnownLocation: { type: lastKnownLocationSchema, default: null },
+    currentStopIndex: { type: Number, default: 0 },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

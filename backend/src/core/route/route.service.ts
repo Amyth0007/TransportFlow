@@ -1,9 +1,15 @@
 import { Types } from 'mongoose';
 import { Route, Trip } from '../../shared/models';
+import { computeRoadPath } from '../../shared/services/directions.service';
 
 export interface StopDoc {
   order: number;
   label: string;
+  lat: number;
+  lng: number;
+}
+
+export interface LatLngDoc {
   lat: number;
   lng: number;
 }
@@ -13,6 +19,7 @@ export interface RouteDoc {
   organizationId: Types.ObjectId;
   name: string;
   stops: StopDoc[];
+  roadPath: LatLngDoc[] | null;
   createdAt: Date;
 }
 
@@ -48,13 +55,14 @@ export async function createRoute(
   organizationId: string,
   input: CreateRouteInput
 ): Promise<RouteDoc> {
-  // Sort stops by order to ensure chronological pathing integrity
   const sortedStops = [...input.stops].sort((a, b) => a.order - b.order);
+  const roadPath = await computeRoadPath(sortedStops);
 
   const doc = await Route.create({
     organizationId,
     name: input.name,
     stops: sortedStops,
+    roadPath,
   });
   return doc.toObject<RouteDoc>();
 }
@@ -67,12 +75,14 @@ export async function updateRoute(
 ): Promise<RouteDoc | null> {
   if (!Types.ObjectId.isValid(routeId)) return null;
 
-  const updatePayload: Record<string, any> = {};
+  const updatePayload: Record<string, unknown> = {};
   if (input.name !== undefined) {
     updatePayload.name = input.name;
   }
   if (input.stops !== undefined) {
-    updatePayload.stops = [...input.stops].sort((a, b) => a.order - b.order);
+    const sortedStops = [...input.stops].sort((a, b) => a.order - b.order);
+    updatePayload.stops = sortedStops;
+    updatePayload.roadPath = await computeRoadPath(sortedStops);
   }
 
   return Route.findOneAndUpdate(

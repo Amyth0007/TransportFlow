@@ -52,3 +52,19 @@ export function attachOrgContext(req: Request, _res: Response, next: NextFunctio
   req.org = { organizationId: req.user.organizationId };
   next();
 }
+
+/**
+ * Org-scoped CRUD (vehicles, drivers, routes, trips). Super Admin has no
+ * organizationId and must use /api/admin/orgs instead.
+ */
+export function requireOrgScoped(req: Request, res: Response, next: NextFunction): void {
+  if (req.user.role === 'super_admin') {
+    res.status(403).json({ error: 'Super admin cannot access org-scoped resources' });
+    return;
+  }
+  if (!req.user.organizationId) {
+    res.status(403).json({ error: 'Organization context required' });
+    return;
+  }
+  next();
+}

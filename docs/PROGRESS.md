@@ -8,6 +8,200 @@
 
 ---
 
+### 2026-08-22 — Cursor — Mobile map uses Maps JS (Expo Go)
+
+Done:
+- Confirmed `mobile/.env` has `EXPO_PUBLIC_MAPS_API_KEY` and Expo already
+  logs `env: export EXPO_PUBLIC_MAPS_API_KEY`. The blank map was not a
+  missing env file. Expo Go ignores the project's Android Maps SDK key, so
+  native `MapView` stayed black.
+- Trip map now loads the Google Maps JavaScript API in a WebView (same key
+  that works on web). Added `react-native-webview`. app.config.js reads
+  `.env` from disk for future native builds.
+
+---
+
+### 2026-08-22 — Cursor — Fix blank mobile map
+
+Done:
+- Created `mobile/.env` with `EXPO_PUBLIC_MAPS_API_KEY` (same Google key as
+  web). Wired it into `android.config.googleMaps.apiKey` + the maps plugin
+  in `app.config.js` (plugin alone is not enough for Expo Go).
+- Removed `overflow: hidden` on the trip map container (Android MapView
+  goes blank when clipped). Dropped the opaque loading overlay that covered
+  the view if `onMapReady` never fired.
+
+Left / next:
+- Restart Expo (`npx expo start -c`) so the new env/config load.
+- Enable **Maps SDK for Android** on that Google Cloud key. A JS-only /
+  HTTP-referrer-restricted key still shows a blank native map.
+- Recent Expo Go builds sometimes cannot show Google tiles at all; a
+  development build is the fallback.
+
+---
+
+### 2026-08-22 — Cursor — Driver mobile revamp
+
+Done:
+- `GET /api/trips/my` and `GET /api/trips/my/:id` (driver JWT only), with
+  route + vehicle. Drivers cannot list/create org trips; start/end only
+  on their assigned trip.
+- Mobile: ink/cyan theme, login → Home (assigned trips, auto-open live)
+  → Trip (hybrid map, roadPath polyline, truck pin, Start/Arrived/End).
+- Resume: reopen an `in_progress` trip and GPS continues (foreground).
+- Rejoin `trip:join` on socket reconnect.
+
+Left / next:
+- Web isolation checklist still pending.
+- No background GPS, push, or verticals.
+- Run Expo on a device with `EXPO_PUBLIC_API_URL` pointing at the LAN IP.
+
+---
+
+### 2026-08-22 — Cursor — Trip map road path + truck on path
+
+Done:
+- Trip/public maps wait until Google Map is ready, then request driving
+  Directions through all stops (roads). Pins unchanged.
+- Truck GPS is snapped onto that polyline and eased between pings.
+
+---
+
+### 2026-08-22 — Cursor — Trip map shows driving path
+
+Done:
+- Trip detail and public tracking use Google Directions (driving, India)
+  through ordered stops so the line follows roads. Route editor still
+  connects pins. Backend Directions calls use mode=driving&region=in.
+
+---
+
+### 2026-08-22 — Cursor — Add route stop by place name
+
+Done:
+- Routes form: Google Places Autocomplete (India). Pick a place to add
+  or replace the selected stop. Places library loaded with Maps JS.
+
+---
+
+### 2026-08-22 — Cursor — Route stop 1 from browser location
+
+Done:
+- New route form asks for geolocation; if allowed and inside India, stop 1
+  is the user's current position. Manual retry button if denied.
+
+---
+
+### 2026-08-22 — Cursor — Web UI theme + India hybrid map
+
+Done:
+- Project skill `.cursor/skills/transportflow-ui/` (tokens for web + future mobile).
+- Dashboard: dark ink/cyan/amber system in `web/src/index.css`; layouts,
+  login, CRUD pages, public track.
+- Map: hybrid satellite, greedy gestures, India `restriction`, truck
+  marker, no fitBounds on every GPS ping (that caused world zoom).
+
+Left / next:
+- Stabilize Web isolation checklist still pending.
+- Mobile should copy tokens from the skill when UI work starts.
+
+---
+
+### 2026-08-22 — Cursor — Stabilize Web slices 0–3
+
+Done:
+- Docs: STABILIZE-WEB-PLAN.md is current; DATA-MODELS User includes
+  super_admin; ARCHITECTURE single JWT / location:broadcast; PHASE-0
+  historical; PHASE-2 OTP item removed.
+- Backend: requireOrgScoped (403 super_admin on org APIs); login fails
+  when org is inactive; driver phone unique per org (legacy phone_1
+  index dropped on seed); `npm run isolation-check`.
+- Web: list loading/error/empty; MAPS_API_KEY warning; trip detail
+  listens to location:broadcast like the public page.
+
+Left / next:
+- Run the checklist in STABILIZE-WEB-PLAN.md (two orgs, isolation-check,
+  disable-org login). Do not mark Phase 1 done until that passes.
+- Mobile frozen. Commits only when asked.
+
+---
+
+### 2026-07-05 — Cursor — Public tracking page live view fix
+
+Done:
+- **Root cause:** Public page fetched route/vehicle/driver via auth-only APIs → 401, empty map, no live tracking.
+- **`GET /api/public/trips/:token`** now returns enriched `PublicTripView` (trip + route stops/roadPath + vehicle/driver names) in one call.
+- **`PublicTrackingPage`** uses single public endpoint; listens to `location:broadcast`, `stop:reached_broadcast`, `trip:status_changed` — same live experience as admin TripDetailPage.
+
+---
+
+Done:
+- **Mobile blank map — root causes fixed:**
+  - MapView was nested inside ScrollView (known cause of blank tiles) → map moved to fixed-height container outside scroll.
+  - `provider="google"` forced on iOS where Expo Go uses Apple Maps → Google provider only on Android via `PROVIDER_GOOGLE`.
+  - Static `initialRegion` only → `fitToCoordinates` on map ready + when stops change.
+  - Extracted `mobile/src/components/RouteMap.tsx` sharing the same props contract as web (`routeMapTypes.ts`).
+- **Road-snapped paths:** `roadPath` field on Route (DATA-MODELS.md updated). Backend `directions.service.ts` calls Google Directions API on route create/update; stores encoded polyline as `{lat,lng}[]`; null + straight-line fallback on failure.
+- **Web map UX:** Drag updates lat/lng live (drag + dragend), click row to select stop (orange highlight), map pans to selected stop, bounds refit when stops move, road path displayed when cached.
+- **DECISIONS.md:** Superseded straight-line MVP decision with cached road-path decision.
+
+Left / next:
+- Set `MAPS_API_KEY` in backend `.env` for road path computation to work.
+- Device-test mobile map on Android (Google) and iOS (Apple Maps in Expo Go).
+- Phase 1 cross-org isolation smoke test still pending.
+
+---
+
+Done:
+- **Super Admin web UI:** `/super-admin/login` page, `/super-admin/orgs` panel (list/create/disable orgs), `SuperAdminLayout`, wired in `App.tsx`.
+- **Role guards:** `ProtectedRoute` redirects `super_admin` away from org dashboard; `ProtectedSuperAdminRoute` rejects non-super-admin roles; org login redirects super admin to `/super-admin/orgs`.
+- **Carried forward (uncommitted from prior session):** Web `RouteMap` (Google Maps JS), mobile `TripScreen` map via `react-native-maps` (separate impl, not shared component), stop:reached socket events, driver password on create, doc updates for Google Maps + `currentStopIndex`.
+- TypeScript: 0 errors on web, backend, mobile.
+
+Left / next:
+- **Phase 1 Definition of Done:** cross-org isolation smoke test (create two orgs, verify JWT from Org A cannot read Org B data).
+- Commit the accumulated uncommitted work.
+- Device-test mobile map on physical device (map only renders during `in_progress` trips).
+- Vehicle marker bearing/rotation (deferred polish).
+
+Notes:
+- Mobile map uses inline `react-native-maps` in `TripScreen.tsx`, not the web `RouteMap` component — prior PROGRESS entry overstated "shared" component.
+- Road-snapped routing (`roadPath`) not started; `DECISIONS.md` still records straight-line polylines for MVP.
+
+---
+
+### 2026-07-05 — Antigravity — Shared RouteMap component + Mobile route map
+
+Done:
+- **Shared `RouteMap.tsx`** extracted as a single Google Maps component reused across web and mobile contexts. Handles: polyline (straight-line, blue), numbered stop markers (green=reached, blue=pending), interactive map-click-to-add, drag-to-reposition, info-window remove button, vehicle marker, live Socket.IO tracking (location:broadcast + stop:reached_broadcast).
+- **Removed `LiveMap.tsx`** — deprecated component deleted entirely.
+- **`RoutesPage.tsx`** — Integrated `RouteMap` in interactive mode below the stops list. Added ↑/↓ reorder controls per stop. Clicking the map appends a new stop; dragging repositions it; info window remove button removes it. Manual lat/lng inputs remain as fallback.
+- **`TripDetailPage.tsx`** — Migrated from `LiveMap` to `RouteMap`. Passes `stops`, `currentStopIndex`, `lastKnownLocation`, `tripId`, `live` props. Stops list with reached badges unchanged.
+- **`PublicTrackingPage.tsx`** — Same migration as TripDetailPage. Both use `Suspense` lazy-loading for `RouteMap`.
+- **Mobile TripScreen** — Added `react-native-maps` (`expo install`). Embedded a `MapView` (Google provider) with `Polyline` connecting route stops and colored `Marker`s per stop (blue→green as reached), plus a red vehicle location marker. Map is shown only during `in_progress` trips. Google Maps API key wired into `app.json` android config.
+- **TypeScript**: 0 errors on both `web/` and `mobile/` (`tsc --noEmit`).
+
+Left / next:
+- Vehicle marker bearing/rotation (compute atan2 from last two location points, rotate the marker icon accordingly — web + mobile).
+- Proceed to Phase 1 (multi-tenant auth) when ready.
+
+---
+
+
+### 2026-07-05 — Antigravity — Driver Password creation, Google Maps integration & Socket stop:reached client updates
+
+Done:
+- **Driver Password:** Refactored backend and web frontend to support manager-provided password during driver creation. Backend validates that a password is provided, and the web creation form requires it. Disabled password editing during updates.
+- **Maps Switch:** Switched the web dashboard map from Leaflet/OSM to Google Maps. Exposes the API key via process.env.MAPS_API_KEY loaded dynamically from the root `.env` via Vite configuration.
+- **Stop Tracking:** Implemented `stop:reached` client updates. Admin dashboard (`TripDetailPage`), public tracking page (`PublicTrackingPage`), and driver app (`TripScreen`) all listen to `stop:reached_broadcast` to update markers and stops list real-time. Added an interactive "Arrived" button for the driver's current active stop.
+- **Mobile Auth:** Re-architected driver app navigation to use React Navigation's state-driven auth routing conditional check. Completely resolves the replace navigation error when switching screen states.
+
+Left / next:
+- Verify real-time Socket.IO communication and GPS loops on actual test flows.
+- Proceed to Phase 1 onboarding and JWT middleware transitions.
+
+---
+
 ### 2026-07-05 — Amazon Q — Phase 0 complete + Phase 1 planning
 
 Done:

@@ -10,10 +10,19 @@ import 'dotenv/config';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
 import { connectDB } from '../shared/db';
-import { Organization, User } from '../shared/models';
+import { Organization, User, Driver } from '../shared/models';
 
 async function seed(): Promise<void> {
   await connectDB();
+
+  // Old Driver schema had a global unique index on phone. Compound unique
+  // is (organizationId, phone). Drop the leftover index if it still exists.
+  try {
+    await Driver.collection.dropIndex('phone_1');
+    console.log('Dropped legacy Driver.phone unique index');
+  } catch {
+    // Index missing — nothing to do
+  }
 
   // ── Organization ──────────────────────────────────────────────────────────
   let org = await Organization.findOne({ name: 'TransportFlow Demo Org' });

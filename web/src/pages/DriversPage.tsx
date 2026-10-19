@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api, { type Driver } from '../lib/api';
 
-const EMPTY_FORM = { name: '', phone: '', licenseNumber: '' };
+const EMPTY_FORM = { name: '', phone: '', licenseNumber: '', password: '' };
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -9,17 +9,27 @@ export default function DriversPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [tempPassword, setTempPassword] = useState('');
   const [error, setError] = useState('');
+  const [listError, setListError] = useState('');
+  const [listLoading, setListLoading] = useState(true);
 
   async function load() {
-    const res = await api.get<{ data: Driver[] }>('/drivers');
-    setDrivers(res.data.data);
+    setListLoading(true);
+    try {
+      const res = await api.get<{ data: Driver[] }>('/drivers');
+      setDrivers(res.data.data);
+      setListError('');
+    } catch {
+      setListError('Could not load drivers');
+    } finally {
+      setListLoading(false);
+    }
   }
 
   useEffect(() => { load(); }, []);
 
   function startEdit(d: Driver) {
     setEditId(d._id);
-    setForm({ name: d.name, phone: d.phone, licenseNumber: d.licenseNumber });
+    setForm({ name: d.name, phone: d.phone, licenseNumber: d.licenseNumber, password: '' });
     setTempPassword('');
   }
 
@@ -31,11 +41,15 @@ export default function DriversPage() {
     setTempPassword('');
     try {
       if (editId) {
-        await api.patch(`/drivers/${editId}`, form);
+        await api.patch(`/drivers/${editId}`, {
+          name: form.name,
+          phone: form.phone,
+          licenseNumber: form.licenseNumber
+        });
         cancelEdit();
       } else {
-        const res = await api.post<{ data: Driver; tempPassword: string }>('/drivers', form);
-        setTempPassword(res.data.tempPassword);
+        const payload = { name: form.name, phone: form.phone, licenseNumber: form.licenseNumber, password: form.password };
+        await api.post<{ data: Driver }>('/drivers', payload);
         setForm(EMPTY_FORM);
       }
       load();
@@ -51,67 +65,72 @@ export default function DriversPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Drivers</h1>
+      <div>
+        <p className="tf-kicker">People</p>
+        <h1 className="tf-title text-2xl mt-1">Drivers</h1>
+      </div>
+      {listError && <p className="text-sm text-coral">{listError}</p>}
 
-      <form onSubmit={handleSubmit} className="bg-white p-4 rounded shadow space-y-3 max-w-lg">
-        <h2 className="font-semibold text-sm">{editId ? 'Edit driver' : 'Add driver'}</h2>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {tempPassword && (
-          <div className="bg-yellow-50 border border-yellow-300 rounded p-3 text-sm">
-            <p className="font-medium">Driver created. Share this password — shown once only:</p>
-            <p className="font-mono text-lg mt-1">{tempPassword}</p>
-          </div>
-        )}
+      <form onSubmit={handleSubmit} className="tf-card p-5 space-y-3 max-w-lg">
+        <h2 className="font-semibold text-sm text-sand">{editId ? 'Edit driver' : 'Add driver'}</h2>
+        {error && <p className="text-sm text-coral">{error}</p>}
         <div className="grid grid-cols-2 gap-3">
           <input placeholder="Name *" required value={form.name}
             onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-            className="border rounded px-3 py-2 text-sm col-span-2" />
+            className="tf-field col-span-2" />
           <input placeholder="Phone *" required value={form.phone}
             onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-            className="border rounded px-3 py-2 text-sm" />
+            className="tf-field" />
           <input placeholder="License number *" required value={form.licenseNumber}
             onChange={e => setForm(f => ({ ...f, licenseNumber: e.target.value }))}
-            className="border rounded px-3 py-2 text-sm" />
+            className="tf-field" />
+          {!editId && (
+            <input placeholder="Password *" required type="password" value={form.password}
+              onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+              className="tf-field col-span-2" />
+          )}
         </div>
         <div className="flex gap-2">
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
+          <button type="submit" className="tf-btn tf-btn-primary">
             {editId ? 'Save' : 'Add'}
           </button>
-          {editId && <button type="button" onClick={cancelEdit} className="px-4 py-2 rounded text-sm border hover:bg-gray-50">Cancel</button>}
+          {editId && <button type="button" onClick={cancelEdit} className="tf-btn tf-btn-ghost">Cancel</button>}
         </div>
       </form>
 
-      <div className="bg-white rounded shadow overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left">
+      <div className="tf-card tf-table-wrap">
+        <table>
+          <thead>
             <tr>
               {['Name', 'Phone', 'License', 'Status', ''].map(h => (
-                <th key={h} className="px-4 py-3 font-medium text-gray-600">{h}</th>
+                <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {drivers.map(d => (
-              <tr key={d._id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-3">{d.name}</td>
-                <td className="px-4 py-3">{d.phone}</td>
-                <td className="px-4 py-3">{d.licenseNumber}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    d.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+            {listLoading && (
+              <tr><td colSpan={5} className="text-center text-mute">Loading…</td></tr>
+            )}
+            {!listLoading && drivers.map(d => (
+              <tr key={d._id}>
+                <td className="text-sand">{d.name}</td>
+                <td>{d.phone}</td>
+                <td>{d.licenseNumber}</td>
+                <td>
+                  <span className={`tf-badge ${d.status === 'active' ? 'tf-badge-ok' : 'tf-badge-muted'}`}>
                     {d.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 flex gap-3">
-                  <button onClick={() => startEdit(d)} className="text-blue-600 hover:underline">Edit</button>
+                <td className="flex gap-3">
+                  <button onClick={() => startEdit(d)} className="tf-link text-sm">Edit</button>
                   {d.status !== 'inactive' && (
-                    <button onClick={() => deactivate(d._id)} className="text-red-500 hover:underline">Deactivate</button>
+                    <button onClick={() => deactivate(d._id)} className="text-coral text-sm hover:underline">Deactivate</button>
                   )}
                 </td>
               </tr>
             ))}
-            {drivers.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400">No drivers yet</td></tr>
+            {!listLoading && drivers.length === 0 && (
+              <tr><td colSpan={5} className="text-center text-mute">No drivers yet</td></tr>
             )}
           </tbody>
         </table>

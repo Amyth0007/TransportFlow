@@ -17,22 +17,20 @@ interface LoginResponse {
  * Returns a JWT access token if successful.
  */
 export async function loginDriver(phone: string, password: string): Promise<LoginResponse> {
-  // Find active driver by phone
-  const driver = await Driver.findOne({ phone, status: 'active' });
-  if (!driver) {
+  const matches = await Driver.find({ phone, status: 'active' }).limit(2);
+  if (matches.length !== 1) {
     throw new Error('Invalid phone number or password');
   }
+  const driver = matches[0];
 
-  // Verify password using bcrypt
   const isMatch = await bcrypt.compare(password, driver.passwordHash);
   if (!isMatch) {
     throw new Error('Invalid phone number or password');
   }
 
-  // Find organization to get orgType for JWT payload
   const org = await Organization.findById(driver.organizationId);
-  if (!org) {
-    throw new Error('Driver organization not found');
+  if (!org || !org.isActive) {
+    throw new Error('Invalid phone number or password');
   }
 
   // Generate JWT payload matching docs/DATA-MODELS.md
@@ -76,12 +74,11 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
   const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
 
   // super_admin has no organizationId — use empty string as sentinel
-  // (requireAuth sets req.user.organizationId; super_admin routes use
-  // requireSuperAdmin and never touch req.org)
   let orgType = 'none';
-  if (user.organizationId) {
+  if (user.role !== 'super_admin') {
+    if (!user.organizationId) throw new Error('Invalid email or password');
     const org = await Organization.findById(user.organizationId);
-    if (!org) throw new Error('Organization not found');
+    if (!org || !org.isActive) throw new Error('Invalid email or password');
     orgType = org.orgType;
   }
 

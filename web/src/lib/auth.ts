@@ -26,3 +26,18 @@ export function getToken(): string | null {
 export function isLoggedIn(): boolean {
   return !!getToken();
 }
+
+/** Decode the JWT payload (no verification — trust is established server-side). */
+function decodeToken(token: string): Record<string, unknown> | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+}
+
+export function getRole(): string | null {
+  const token = getToken();
+  if (!token) return null;
+  return (decodeToken(token)?.role as string) ?? null;
+}

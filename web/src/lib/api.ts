@@ -42,6 +42,15 @@ export interface Route {
   _id: string;
   name: string;
   stops: Stop[];
+  roadPath: { lat: number; lng: number }[] | null;
+  createdAt: string;
+}
+
+export interface Organization {
+  _id: string;
+  name: string;
+  orgType: 'gas' | 'school' | 'corporate' | 'generic';
+  isActive: boolean;
   createdAt: string;
 }
 
@@ -56,5 +65,6 @@ export interface Trip {
   startedAt: string | null;
   endedAt: string | null;
   lastKnownLocation: { lat: number; lng: number; updatedAt: string } | null;
+  currentStopIndex: number;
   createdAt: string;
 }

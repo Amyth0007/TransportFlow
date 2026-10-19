@@ -3,6 +3,8 @@ import * as controller from './trip.controller';
 
 const router = Router();
 
+router.get('/my', controller.listMyTrips);
+router.get('/my/:id', controller.getMyTrip);
 router.get('/', controller.listTrips);
 router.get('/:id', controller.getTrip);
 router.post('/', controller.createTrip);

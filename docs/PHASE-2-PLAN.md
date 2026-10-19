@@ -20,10 +20,10 @@ paying business," without adding any vertical-specific features yet.
 - [ ] Basic error handling audit — consistent error response shape
       across all endpoints (this tends to be inconsistent after Phase
       0/1's fast iteration, worth a deliberate pass)
-- [ ] Rate limiting on OTP endpoints (basic abuse prevention before real
-      users touch this)
 - [ ] Input validation audit on all CRUD endpoints (Phase 0/1 likely
       trusted input more than production should)
+- [ ] Rate limiting on auth login endpoints (OTP was superseded; do not
+      add OTP rate limits)
 
 **Web**
 - [ ] Trip history page (list past trips per org, view route playback

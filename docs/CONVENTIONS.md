@@ -30,6 +30,8 @@
 ## Web
 
 - Functional components + hooks only, no class components.
+- Visual system: `.cursor/skills/transportflow-ui/SKILL.md` and
+  `web/src/index.css`. Do not invent a second palette.
 - Data fetching: keep it simple for MVP (fetch/axios + useEffect or a
   lightweight query lib) — don't introduce a heavy state management
   library unless the app's complexity actually demands it.
@@ -52,6 +54,6 @@
 
 ## When in doubt
 
-If a task isn't clearly covered by `docs/PHASE-0-PLAN.md` (or the
-current phase file) or contradicts something in `docs/DECISIONS.md`,
+If a task isn't clearly covered by `docs/CURRENT-PHASE.md` (and the
+phase file it points at) or contradicts something in `docs/DECISIONS.md`,
 stop and ask rather than guessing or expanding scope.

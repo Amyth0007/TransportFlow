@@ -7,10 +7,16 @@ export interface IStop {
   lng: number;
 }
 
+export interface ILatLng {
+  lat: number;
+  lng: number;
+}
+
 export interface IRoute extends Document {
   organizationId: Types.ObjectId;
   name: string;
   stops: IStop[];
+  roadPath: ILatLng[] | null;
   createdAt: Date;
 }
 
@@ -29,6 +35,7 @@ const routeSchema = new Schema<IRoute>(
     organizationId: { type: Schema.Types.ObjectId, required: true, ref: 'Organization' },
     name: { type: String, required: true },
     stops: { type: [stopSchema], required: true, default: [] },
+    roadPath: { type: [{ lat: Number, lng: Number, _id: false }], default: null },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

@@ -27,14 +27,14 @@ Two decisions made before this phase started (see `docs/DECISIONS.md`):
       attaches `req.user = { userId, role, organizationId, orgType }`.
       Applied to all `/api` routes except `/api/auth/*` and
       `/api/public/*`.
-- [ ] Super Admin role: hardcoded in JWT (`role: "super_admin"`), seeded
+- [x] Super Admin role: hardcoded in JWT (`role: "super_admin"`), seeded
       once. Super Admin is not scoped to any org.
-- [ ] Organization CRUD (Super Admin only):
+- [x] Organization CRUD (Super Admin only):
       `POST /api/admin/orgs` — create org + first Org Admin in one call
       (name, orgType, adminName, adminEmail, adminPassword).
       `GET /api/admin/orgs` — list all orgs.
       `PATCH /api/admin/orgs/:id/disable` — set `isActive: false`.
-- [ ] `requireSuperAdmin` middleware: rejects any token whose role is
+- [x] `requireSuperAdmin` middleware: rejects any token whose role is
       not `super_admin`.
 - [ ] Driver login scoped to org: `POST /api/auth/driver/login` already
       works; verify it correctly rejects a driver token used against a
@@ -45,15 +45,15 @@ Two decisions made before this phase started (see `docs/DECISIONS.md`):
 
 ### Web
 
-- [ ] Super Admin login page (`/super-admin/login`) — separate from the
+- [x] Super Admin login page (`/super-admin/login`) — separate from the
       Org Admin login, same email+password form, routes to the Super
       Admin panel on success.
-- [ ] Super Admin panel (`/super-admin/orgs`):
+- [x] Super Admin panel (`/super-admin/orgs`):
       - List all orgs (name, orgType, isActive, createdAt).
       - "Create org" form: org name, orgType, first admin name, email,
         password. Single submit creates both org and admin in one call.
       - "Disable" button per org row.
-- [ ] `ProtectedSuperAdminRoute` component — same pattern as
+- [x] `ProtectedSuperAdminRoute` component — same pattern as
       `ProtectedRoute` but checks `role === "super_admin"` from the
       decoded token.
 - [ ] Org Admin login: already works (`/login`). Confirm it still works

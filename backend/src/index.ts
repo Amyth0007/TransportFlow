@@ -3,7 +3,7 @@ import http from 'http';
 import express from 'express';
 import { Server as SocketIOServer } from 'socket.io';
 import { connectDB } from './shared/db';
-import { attachOrgContext, requireAuth } from './shared/middleware/orgContext';
+import { attachOrgContext, requireAuth, requireOrgScoped } from './shared/middleware/orgContext';
 import { vehicleRouter } from './core/vehicle/vehicle.router';
 import { driverRouter } from './core/driver/driver.router';
 import { routeRouter } from './core/route/route.router';
@@ -33,10 +33,12 @@ app.use('/api/admin/orgs', organizationRouter);
 // attachOrgContext reads req.user.organizationId into req.org.
 // Controllers never change — they still read req.org.organizationId.
 app.use('/api', (req, res, next) => {
-  if (req.path.startsWith('/auth/') || req.path.startsWith('/public/')) {
+  if (req.path.startsWith('/auth/') || req.path.startsWith('/public/') || req.path.startsWith('/admin/')) {
     return next();
   }
-  requireAuth(req, res, () => attachOrgContext(req, res, next));
+  requireAuth(req, res, () =>
+    attachOrgContext(req, res, () => requireOrgScoped(req, res, next))
+  );
 });
 
 // ── Core routers ─────────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { Trip } from '../../shared/models';
+import { Route } from '../../shared/models';
 
 // All event payload shapes match docs/DATA-MODELS.md exactly.
 
@@ -63,11 +64,39 @@ export function registerTrackingHandlers(io: Server, socket: Socket): void {
   // Emitted by the server (from REST start/end endpoints) to notify connected
   // clients. The socket handler here allows the driver app to also emit it
   // directly if needed (e.g. reconnect scenario).
-  socket.on(
-    'trip:status_changed',
-    ({ tripId, status }: { tripId: string; status: 'scheduled' | 'in_progress' | 'completed' }) => {
-      if (!tripId || !status) return;
-      io.to(`trip_${tripId}`).emit('trip:status_changed', { tripId, status });
+  // ── stop:reached ───────────────────────────────────────────────────────
+  // Client notifies server that driver reached a stop.
+  // Server validates progression and updates currentStopIndex.
+  socket.on('stop:reached', async (payload: { tripId: string; stopIndex: number }) => {
+    const { tripId, stopIndex } = payload;
+    if (!tripId || stopIndex === undefined || stopIndex === null) return;
+    try {
+      // Load Trip and Route
+      const trip = await Trip.findById(tripId).lean();
+      if (!trip) return;
+      const route = await Route.findById(trip.routeId).lean();
+      if (!route) return;
+      const stopsCount = route.stops.length;
+      // Validate stop index range
+      if (stopIndex < 0 || stopIndex >= stopsCount) {
+        socket.emit('error', `Invalid stop index: route only has ${stopsCount} stops.`);
+        return;
+      }
+      // Enforce forward progression
+      if (stopIndex <= (trip as any).currentStopIndex) {
+        socket.emit('error', `Invalid stop index: cannot move backwards or repeat.`);
+        return;
+      }
+      // Update currentStopIndex
+      await Trip.findByIdAndUpdate(tripId, { $set: { currentStopIndex: stopIndex } });
+      const driverId = socket.data.driverId as string | undefined;
+      io.to(`trip_${tripId}`).emit('stop:reached_broadcast', {
+        tripId,
+        driverId: driverId ?? '',
+        stopIndex,
+      });
+    } catch (e) {
+      // swallow errors
     }
-  );
+  });
 }

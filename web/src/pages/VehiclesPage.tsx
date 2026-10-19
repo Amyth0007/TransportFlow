@@ -8,10 +8,20 @@ export default function VehiclesPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editId, setEditId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [listError, setListError] = useState('');
+  const [listLoading, setListLoading] = useState(true);
 
   async function load() {
-    const res = await api.get<{ data: Vehicle[] }>('/vehicles');
-    setVehicles(res.data.data);
+    setListLoading(true);
+    try {
+      const res = await api.get<{ data: Vehicle[] }>('/vehicles');
+      setVehicles(res.data.data);
+      setListError('');
+    } catch {
+      setListError('Could not load vehicles');
+    } finally {
+      setListLoading(false);
+    }
   }
 
   useEffect(() => { load(); }, []);
@@ -47,69 +57,76 @@ export default function VehiclesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Vehicles</h1>
+      <div>
+        <p className="tf-kicker">Fleet</p>
+        <h1 className="tf-title text-2xl mt-1">Vehicles</h1>
+      </div>
+      {listError && <p className="text-sm text-coral">{listError}</p>}
 
-      <form onSubmit={handleSubmit} className="bg-white p-4 rounded shadow space-y-3 max-w-lg">
-        <h2 className="font-semibold text-sm">{editId ? 'Edit vehicle' : 'Add vehicle'}</h2>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+      <form onSubmit={handleSubmit} className="tf-card p-5 space-y-3 max-w-lg">
+        <h2 className="font-semibold text-sm text-sand">{editId ? 'Edit vehicle' : 'Add vehicle'}</h2>
+        {error && <p className="text-sm text-coral">{error}</p>}
         <div className="grid grid-cols-2 gap-3">
           <input placeholder="Vehicle number *" required value={form.vehicleNumber}
             onChange={e => setForm(f => ({ ...f, vehicleNumber: e.target.value }))}
-            className="border rounded px-3 py-2 text-sm col-span-2" />
+            className="tf-field col-span-2" />
           <input placeholder="Type (bus, van…) *" required value={form.type}
             onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-            className="border rounded px-3 py-2 text-sm" />
+            className="tf-field" />
           <input placeholder="Capacity" type="number" value={form.capacity}
             onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))}
-            className="border rounded px-3 py-2 text-sm" />
+            className="tf-field" />
           <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Vehicle['status'] }))}
-            className="border rounded px-3 py-2 text-sm col-span-2">
+            className="tf-field col-span-2">
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
             <option value="maintenance">Maintenance</option>
           </select>
         </div>
         <div className="flex gap-2">
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
+          <button type="submit" className="tf-btn tf-btn-primary">
             {editId ? 'Save' : 'Add'}
           </button>
-          {editId && <button type="button" onClick={cancelEdit} className="px-4 py-2 rounded text-sm border hover:bg-gray-50">Cancel</button>}
+          {editId && <button type="button" onClick={cancelEdit} className="tf-btn tf-btn-ghost">Cancel</button>}
         </div>
       </form>
 
-      <div className="bg-white rounded shadow overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left">
+      <div className="tf-card tf-table-wrap">
+        <table>
+          <thead>
             <tr>
               {['Number', 'Type', 'Capacity', 'Status', ''].map(h => (
-                <th key={h} className="px-4 py-3 font-medium text-gray-600">{h}</th>
+                <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {vehicles.map(v => (
-              <tr key={v._id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-3">{v.vehicleNumber}</td>
-                <td className="px-4 py-3">{v.type}</td>
-                <td className="px-4 py-3">{v.capacity ?? '—'}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    v.status === 'active' ? 'bg-green-100 text-green-700' :
-                    v.status === 'maintenance' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-500'}`}>
+            {listLoading && (
+              <tr><td colSpan={5} className="text-center text-mute">Loading…</td></tr>
+            )}
+            {!listLoading && vehicles.map(v => (
+              <tr key={v._id}>
+                <td className="text-sand">{v.vehicleNumber}</td>
+                <td>{v.type}</td>
+                <td>{v.capacity ?? '—'}</td>
+                <td>
+                  <span className={`tf-badge ${
+                    v.status === 'active' ? 'tf-badge-ok' :
+                    v.status === 'maintenance' ? 'tf-badge-warn' :
+                    'tf-badge-muted'}`}>
                     {v.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 flex gap-3">
-                  <button onClick={() => startEdit(v)} className="text-blue-600 hover:underline">Edit</button>
+                <td className="flex gap-3">
+                  <button onClick={() => startEdit(v)} className="tf-link text-sm">Edit</button>
                   {v.status !== 'inactive' && (
-                    <button onClick={() => deactivate(v._id)} className="text-red-500 hover:underline">Deactivate</button>
+                    <button onClick={() => deactivate(v._id)} className="text-coral text-sm hover:underline">Deactivate</button>
                   )}
                 </td>
               </tr>
             ))}
-            {vehicles.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400">No vehicles yet</td></tr>
+            {!listLoading && vehicles.length === 0 && (
+              <tr><td colSpan={5} className="text-center text-mute">No vehicles yet</td></tr>
             )}
           </tbody>
         </table>

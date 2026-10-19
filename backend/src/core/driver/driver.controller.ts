@@ -17,31 +17,33 @@ export async function getDriver(req: Request, res: Response): Promise<void> {
 }
 
 export async function createDriver(req: Request, res: Response): Promise<void> {
-  const { name, phone, licenseNumber, status, assignedVehicleId } = req.body as {
+  const { name, phone, licenseNumber, status, assignedVehicleId, password } = req.body as {
     name?: string;
     phone?: string;
     licenseNumber?: string;
     status?: DriverDoc['status'];
     assignedVehicleId?: string | null;
+    password?: string;
   };
 
-  if (!name || !phone || !licenseNumber) {
-    res.status(400).json({ error: 'name, phone, and licenseNumber are required' });
+  if (!name || !phone || !licenseNumber || !password) {
+    res.status(400).json({ error: 'name, phone, licenseNumber, and password are required' });
     return;
   }
 
   try {
-    const { driver, tempPassword } = await driverService.createDriver(req.org.organizationId, {
+    const { driver } = await driverService.createDriver(req.org.organizationId, {
       name,
       phone,
       licenseNumber,
       status,
       assignedVehicleId,
+      password,
     });
-    res.status(201).json({ data: driver, tempPassword });
+    res.status(201).json({ data: driver });
   } catch (error: any) {
-    if (error.code === 11000) {
-      res.status(409).json({ error: 'Phone number already registered' });
+    if (error.status === 409 || error.code === 11000) {
+      res.status(409).json({ error: 'Phone number already registered in this organization' });
     } else {
       res.status(500).json({ error: error.message || 'Internal server error' });
     }
@@ -72,8 +74,8 @@ export async function updateDriver(req: Request, res: Response): Promise<void> {
     }
     res.json({ data: driver });
   } catch (error: any) {
-    if (error.code === 11000) {
-      res.status(409).json({ error: 'Phone number already registered' });
+    if (error.status === 409 || error.code === 11000) {
+      res.status(409).json({ error: 'Phone number already registered in this organization' });
     } else {
       res.status(500).json({ error: error.message || 'Internal server error' });
     }

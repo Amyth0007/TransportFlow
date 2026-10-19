@@ -15,7 +15,7 @@ const driverSchema = new Schema<IDriver>(
   {
     organizationId: { type: Schema.Types.ObjectId, required: true, ref: 'Organization' },
     name: { type: String, required: true },
-    phone: { type: String, required: true, unique: true },
+    phone: { type: String, required: true },
     passwordHash: { type: String, required: true },
     licenseNumber: { type: String, required: true },
     status: {
@@ -28,5 +28,7 @@ const driverSchema = new Schema<IDriver>(
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );
+
+driverSchema.index({ organizationId: 1, phone: 1 }, { unique: true });
 
 export const Driver = model<IDriver>('Driver', driverSchema);

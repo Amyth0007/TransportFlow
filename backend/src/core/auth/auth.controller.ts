@@ -15,8 +15,6 @@ export async function loginDriver(req: Request, res: Response): Promise<void> {
   } catch (error: any) {
     if (error.message === 'Invalid phone number or password') {
       res.status(401).json({ error: error.message });
-    } else if (error.message === 'Driver organization not found') {
-      res.status(404).json({ error: error.message });
     } else {
       res.status(500).json({ error: error.message || 'Internal server error' });
     }

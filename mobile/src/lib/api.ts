@@ -31,4 +31,33 @@ export interface TripDoc {
   startedAt: string | null;
   endedAt: string | null;
   lastKnownLocation: { lat: number; lng: number; updatedAt: string } | null;
+  currentStopIndex: number;
+}
+
+/** GET /api/trips/my — assigned trips with route + vehicle for the driver home. */
+export interface DriverTripView {
+  _id: string;
+  status: 'scheduled' | 'in_progress' | 'completed';
+  scheduledAt: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  lastKnownLocation: { lat: number; lng: number; updatedAt: string } | null;
+  currentStopIndex: number;
+  route: RouteDoc;
+  vehicle: { vehicleNumber: string };
+}
+
+export interface Stop {
+  order: number;
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+export interface RouteDoc {
+  _id: string;
+  name: string;
+  stops: Stop[];
+  roadPath: { lat: number; lng: number }[] | null;
+  createdAt?: string;
 }

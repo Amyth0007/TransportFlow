@@ -1,6 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { logout } from '../lib/auth';
-import { useNavigate } from 'react-router-dom';
 
 const navItems = [
   { to: '/vehicles', label: 'Vehicles' },
@@ -18,19 +17,18 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <aside className="w-48 bg-gray-900 text-white flex flex-col">
-        <div className="px-4 py-5 text-lg font-bold tracking-tight border-b border-gray-700">
-          TransportFlow
+    <div className="tf-shell flex h-screen overflow-hidden">
+      <aside className="w-56 bg-ink-2 text-fog flex flex-col border-r border-line">
+        <div className="px-5 py-6 border-b border-line">
+          <p className="tf-kicker">Live ops</p>
+          <div className="tf-title text-xl mt-1">TransportFlow</div>
         </div>
-        <nav className="flex-1 py-4">
+        <nav className="flex-1 py-4 space-y-1">
           {navItems.map(({ to, label }) => (
             <NavLink
               key={to}
               to={to}
-              className={({ isActive }) =>
-                `block px-4 py-2 text-sm hover:bg-gray-700 ${isActive ? 'bg-gray-700 font-semibold' : ''}`
-              }
+              className={({ isActive }) => `tf-nav ${isActive ? 'tf-nav-active' : ''}`}
             >
               {label}
             </NavLink>
@@ -38,12 +36,12 @@ export default function Layout() {
         </nav>
         <button
           onClick={handleLogout}
-          className="px-4 py-3 text-sm text-gray-400 hover:text-white hover:bg-gray-700 text-left border-t border-gray-700"
+          className="tf-btn tf-btn-ghost mx-3 mb-4 text-left justify-start"
         >
           Log out
         </button>
       </aside>
-      <main className="flex-1 overflow-auto p-6">
+      <main className="flex-1 overflow-auto p-6 md:p-8 tf-enter">
         <Outlet />
       </main>
     </div>

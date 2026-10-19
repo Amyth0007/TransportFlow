@@ -68,7 +68,7 @@ Before writing any code:
    this file first if a schema genuinely needs to change)
 3. Read `docs/DECISIONS.md` (settled decisions — don't re-litigate these)
 4. Read `docs/CONVENTIONS.md` (coding style rules)
-5. Read `docs/PHASE-0-PLAN.md` (or whichever phase file is current) for
+5. Read `docs/CURRENT-PHASE.md`, then the phase file it points at, for
    exact task scope
 6. Read `docs/PROGRESS.md` for what has already been built in previous
    sessions

@@ -1,5 +1,4 @@
 import { Types } from 'mongoose';
-import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { Driver } from '../../shared/models';
 
@@ -19,6 +18,7 @@ export interface CreateDriverInput {
   name: string;
   phone: string;
   licenseNumber: string;
+  password: string; // required admin-provided password
   status?: DriverDoc['status'];
   assignedVehicleId?: string | null;
 }
@@ -49,23 +49,24 @@ export async function getDriver(
 }
 
 /** 
- * Create a new driver for the organization.
- * Generates a random temporary password, hashes it using bcrypt, and returns
- * the plaintext password alongside the saved Driver document.
+ * Create a new driver for the organization with the provided password.
  */
 export async function createDriver(
   organizationId: string,
   input: CreateDriverInput
-): Promise<{ driver: DriverDoc; tempPassword: string }> {
+): Promise<{ driver: DriverDoc }> {
   const assignedVehicleId = input.assignedVehicleId && Types.ObjectId.isValid(input.assignedVehicleId)
     ? new Types.ObjectId(input.assignedVehicleId)
     : null;
 
-  // Generate a random 8-character alphanumeric password
-  const tempPassword = crypto.randomBytes(4).toString('hex');
-  
-  // Hash the password using bcrypt (rounds = 10)
-  const passwordHash = await bcrypt.hash(tempPassword, 10);
+  const existing = await Driver.findOne({ organizationId, phone: input.phone }).lean();
+  if (existing) {
+    throw Object.assign(new Error('Phone number already registered in this organization'), {
+      status: 409,
+    });
+  }
+
+  const passwordHash = await bcrypt.hash(input.password, 10);
 
   const doc = await Driver.create({
     organizationId,
@@ -79,7 +80,6 @@ export async function createDriver(
 
   return {
     driver: doc.toObject<DriverDoc>(),
-    tempPassword,
   };
 }
 
@@ -91,7 +91,20 @@ export async function updateDriver(
 ): Promise<DriverDoc | null> {
   if (!Types.ObjectId.isValid(driverId)) return null;
 
-  const updatePayload: Record<string, any> = { ...input };
+  if (input.phone) {
+    const clash = await Driver.findOne({
+      organizationId,
+      phone: input.phone,
+      _id: { $ne: driverId },
+    }).lean();
+    if (clash) {
+      throw Object.assign(new Error('Phone number already registered in this organization'), {
+        status: 409,
+      });
+    }
+  }
+
+  const updatePayload: Record<string, unknown> = { ...input };
   if (input.assignedVehicleId !== undefined) {
     updatePayload.assignedVehicleId = input.assignedVehicleId && Types.ObjectId.isValid(input.assignedVehicleId)
       ? new Types.ObjectId(input.assignedVehicleId)

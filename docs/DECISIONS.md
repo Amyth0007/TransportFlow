@@ -52,7 +52,11 @@ complexity. Schema still includes `organizationId` from day one so Phase
 ### 2026-07-05 — React (not Angular) for the new web app
 Amyth's day job uses Angular/PrimeNG, but for this new product React was
 chosen: larger ecosystem, easier future hiring, more mature
-Leaflet/Socket.IO integration examples.
+Leaflet/Socket.IO integration examples. **SUPERSEDED — switched to Google Maps**
+
+### 2026-07-05 — Maps provider selection (Google Maps)
+Switching from Leaflet/OpenStreetMap to Google Maps for both web and mobile. API key stored in .env as MAPS_API_KEY.
+This enables richer map features and native SDK support in Expo.
 
 ### 2026-07-05 — req.org middleware pattern for organizationId propagation
 Controllers must never read `organizationId` from env vars, request params,
@@ -90,3 +94,36 @@ creation) is deferred to Phase 2.
   role adds permission-check surface area without advancing that goal.
 - The `role` field is already in the JWT payload and User schema, so
   adding `manager` in Phase 2 requires no schema migration.
+
+### 2026-07-05 — Straight-line polyline route mapping (MVP) **SUPERSEDED — see entry below**
+
+### 2026-07-05 — Road-snapped route path cached on Route document
+Route polylines use the Google Directions API to compute a road-following
+path through ordered stops. The result is stored as `roadPath` on the Route
+document and recomputed only when stops change (create/update), not on every
+map view, to control API cost.
+
+**Fallback:** If the Directions API call fails or `MAPS_API_KEY` is missing,
+`roadPath` is stored as `null` and all clients draw a straight-line polyline
+connecting stops in order.
+
+**Rationale:**
+- Road-following paths are significantly better UX for drivers and tracking viewers.
+- Caching on the Route document avoids repeated API calls per page load.
+- Straight-line fallback keeps the system functional without the API.
+
+### 2026-08-22 — Super Admin cannot call org-scoped APIs
+`super_admin` JWTs have no `organizationId`. Org-scoped routes
+(`/api/vehicles`, `/api/drivers`, `/api/routes`, `/api/trips`) reject
+that role with 403. Super Admin uses `/api/admin/orgs` only.
+
+### 2026-08-22 — Disabled org cannot log in
+If `Organization.isActive` is false, Org Admin and Driver login fail
+with the same generic invalid-credentials message (do not leak that the
+org was disabled). Super Admin login is unchanged.
+
+### 2026-08-22 — Driver phone unique per organization
+`phone` must be unique within an `organizationId`, not globally. Two
+orgs may use the same phone. Login still looks up by phone among active
+drivers (first match); uniqueness per org prevents collisions inside one
+tenant. Adding org-id on the driver login form is deferred to mobile.
